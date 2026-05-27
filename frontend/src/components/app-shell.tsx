@@ -50,10 +50,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <span className="hidden items-center gap-2 text-sm md:flex">
-                  <UserRound size={16} />
+                <Link href="/profile" className="hidden items-center gap-2 rounded px-2 py-1 text-sm text-slate-700 hover:bg-sky-50 md:flex">
+                  <span className="grid h-8 w-8 place-items-center rounded bg-moss text-white shadow-sm">
+                    <UserRound size={16} />
+                  </span>
                   {user.name}
-                </span>
+                </Link>
                 <button
                   className="rounded border border-sky-100 bg-white p-2 text-slate-700 hover:bg-sky-50"
                   title="Đăng xuất"

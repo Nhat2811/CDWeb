@@ -9,6 +9,7 @@ type AuthContextValue = {
   ready: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  updateUser: (user: User) => void;
   logout: () => void;
 };
 
@@ -39,6 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('accessToken', auth.accessToken);
         localStorage.setItem('user', JSON.stringify(auth.user));
         setUser(auth.user);
+      },
+      updateUser: (nextUser) => {
+        const normalized = { ...nextUser, id: nextUser.id ?? nextUser._id ?? '' };
+        localStorage.setItem('user', JSON.stringify(normalized));
+        setUser(normalized);
       },
       logout: () => {
         localStorage.removeItem('accessToken');

@@ -2,9 +2,15 @@ export type UserRole = 'admin' | 'customer';
 
 export type User = {
   id: string;
+  _id?: string;
   name: string;
   email: string;
   role: UserRole;
+  phone?: string;
+  address?: string;
+  avatar?: string;
+  bio?: string;
+  createdAt?: string;
 };
 
 export type ApiResponse<T> = {
@@ -56,4 +62,18 @@ export type Dashboard = {
   totalTicketsSold: number;
   totalRevenue: number;
   recentBookings: Booking[];
+};
+
+export type ProfileStats = {
+  totalBookings: number;
+  paidBookings: number;
+  pendingBookings: number;
+  cancelledBookings: number;
+  totalTickets: number;
+  totalSpent: number;
+};
+
+export type ProfileResponse = {
+  profile: User;
+  stats: ProfileStats;
 };

@@ -28,6 +28,12 @@ export default function LoginPage() {
     }
   }
 
+  function fillDemo(type: 'admin' | 'customer') {
+    setEmail(type === 'admin' ? 'admin@example.com' : 'customer@example.com');
+    setPassword('123456');
+    setError('');
+  }
+
   return (
     <div className="mx-auto max-w-md rounded bg-white p-6 shadow-soft ring-1 ring-sky-100">
       <h1 className="text-2xl font-bold">Đăng nhập</h1>
@@ -48,6 +54,18 @@ export default function LoginPage() {
       <p className="mt-4 text-sm">
         Chưa có tài khoản? <Link className="font-semibold text-coral" href="/register">Đăng ký</Link>
       </p>
+      <div className="mt-5 rounded bg-sky-50 p-3 text-sm text-slate-700">
+        <p className="font-semibold text-ink">Tài khoản demo</p>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button type="button" className="rounded bg-white px-3 py-2 font-semibold text-moss ring-1 ring-sky-100 hover:bg-mintwash" onClick={() => fillDemo('admin')}>
+            Admin
+          </button>
+          <button type="button" className="rounded bg-white px-3 py-2 font-semibold text-moss ring-1 ring-sky-100 hover:bg-mintwash" onClick={() => fillDemo('customer')}>
+            Customer
+          </button>
+        </div>
+        <p className="mt-2 text-xs text-slate-500">Mật khẩu demo: 123456</p>
+      </div>
     </div>
   );
 }

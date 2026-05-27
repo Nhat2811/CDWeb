@@ -15,6 +15,18 @@ export class User {
   @Prop({ required: true })
   password: string;
 
+  @Prop({ default: '' })
+  phone: string;
+
+  @Prop({ default: '' })
+  address: string;
+
+  @Prop({ default: '' })
+  avatar: string;
+
+  @Prop({ default: '' })
+  bio: string;
+
   @Prop({ enum: ['admin', 'customer'], default: 'customer' })
   role: UserRole;
 }

@@ -80,6 +80,40 @@ export class BookingsService {
     return result?.total ?? 0;
   }
 
+  async profileStats(userId: string) {
+    const [result] = await this.bookingModel.aggregate<{
+      totalBookings: number;
+      paidBookings: number;
+      pendingBookings: number;
+      cancelledBookings: number;
+      totalTickets: number;
+      totalSpent: number;
+    }>([
+      { $match: { user: new Types.ObjectId(userId) } },
+      {
+        $group: {
+          _id: null,
+          totalBookings: { $sum: 1 },
+          paidBookings: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] } },
+          pendingBookings: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
+          cancelledBookings: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } },
+          totalTickets: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 0, '$quantity'] } },
+          totalSpent: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$totalPrice', 0] } },
+        },
+      },
+    ]);
+    return (
+      result ?? {
+        totalBookings: 0,
+        paidBookings: 0,
+        pendingBookings: 0,
+        cancelledBookings: 0,
+        totalTickets: 0,
+        totalSpent: 0,
+      }
+    );
+  }
+
   private async findOwnedBooking(id: string, user: JwtUser) {
     const booking = await this.bookingModel.findById(id).exec();
     if (!booking) throw new NotFoundException('Booking not found');

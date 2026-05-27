@@ -15,6 +15,7 @@ api.interceptors.request.use((config) => {
 export function getErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
     const message = error.response?.data?.message;
+    if (message === 'Invalid credentials') return 'Email hoặc mật khẩu không đúng.';
     return Array.isArray(message) ? message.join(', ') : message ?? error.message;
   }
   return error instanceof Error ? error.message : 'Unexpected error';

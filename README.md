@@ -52,3 +52,14 @@ db.users.updateOne({ email: "admin@example.com" }, { $set: { role: "admin" } })
 - `PATCH /bookings/:id/pay`
 - `PATCH /bookings/:id/cancel`
 - `GET /admin/dashboard`
+
+## Dữ liệu demo
+
+```bash
+npm run seed
+```
+
+Tài khoản demo:
+
+- Admin: `admin@example.com` / `123456`
+- Customer: `customer@example.com` / `123456`
