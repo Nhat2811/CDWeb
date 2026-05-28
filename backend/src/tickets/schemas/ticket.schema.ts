@@ -3,14 +3,14 @@ import { HydratedDocument, Types } from 'mongoose';
 import { Event } from '../../events/schemas/event.schema';
 
 export type TicketDocument = HydratedDocument<Ticket>;
-export type TicketName = 'VIP' | 'Standard' | 'Early Bird';
+export type TicketName = 'VIP' | 'VVIP' | 'Standard' | 'Early Bird';
 
 @Schema({ timestamps: true })
 export class Ticket {
   @Prop({ type: Types.ObjectId, ref: Event.name, required: true, index: true })
   event: Types.ObjectId;
 
-  @Prop({ enum: ['VIP', 'Standard', 'Early Bird'], required: true })
+  @Prop({ enum: ['VIP', 'VVIP', 'Standard', 'Early Bird'], required: true })
   name: TicketName;
 
   @Prop({ required: true, min: 0 })

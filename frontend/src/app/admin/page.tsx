@@ -214,6 +214,7 @@ export default function AdminPage() {
               <form onSubmit={onSaveTicket} className="mt-3 grid gap-3 md:grid-cols-[1fr_120px_120px_auto]">
                 <select value={ticketForm.name} onChange={(e) => setTicketForm({ ...ticketForm, name: e.target.value as TicketName })}>
                   <option>VIP</option>
+                  <option>VVIP</option>
                   <option>Standard</option>
                   <option>Early Bird</option>
                 </select>

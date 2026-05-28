@@ -29,7 +29,7 @@ export default function LoginPage() {
   }
 
   function fillDemo(type: 'admin' | 'customer') {
-    setEmail(type === 'admin' ? 'admin@example.com' : 'customer@example.com');
+    setEmail(type === 'admin' ? 'admin@gmail.com' : 'customer@example.com');
     setPassword('123456');
     setError('');
   }

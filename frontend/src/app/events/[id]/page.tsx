@@ -1,16 +1,22 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { CreditCard, MapPin } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { EventDetailSection } from '@/components/event/event-detail-section';
+import { EventDetailSkeleton } from '@/components/event/event-detail-skeleton';
+import { TicketBookingCard } from '@/components/event/ticket-booking-card';
 import { getErrorMessage } from '@/services/api';
 import { createBooking, payBooking } from '@/services/bookings.service';
 import { getEvent, getTickets } from '@/services/events.service';
 import { useAuth } from '@/store/auth-store';
 import { Event, Ticket } from '@/types';
 
-const fallbackImage =
-  'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80';
+type ToastState = {
+  type: 'success' | 'error';
+  message: string;
+} | null;
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,17 +29,22 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState<ToastState>(null);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
+      setError('');
       try {
         const [eventData, ticketData] = await Promise.all([getEvent(id), getTickets(id)]);
         setEvent(eventData);
         setTickets(ticketData);
-        setTicketId(ticketData[0]?._id ?? '');
+        const firstAvailable = ticketData.find((ticket) => ticket.quantity - ticket.sold > 0) ?? ticketData[0];
+        setTicketId(firstAvailable?._id ?? '');
       } catch (err) {
-        setError(getErrorMessage(err));
+        const message = getErrorMessage(err);
+        setError(message);
+        showToast('error', message);
       } finally {
         setLoading(false);
       }
@@ -42,77 +53,92 @@ export default function EventDetailPage() {
   }, [id]);
 
   const selectedTicket = useMemo(() => tickets.find((ticket) => ticket._id === ticketId), [ticketId, tickets]);
-  const total = (selectedTicket?.price ?? 0) * quantity;
+  const remaining = selectedTicket ? Math.max(selectedTicket.quantity - selectedTicket.sold, 0) : 0;
 
-  async function onBook(eventSubmit: FormEvent) {
-    eventSubmit.preventDefault();
+  useEffect(() => {
+    if (!selectedTicket) return;
+    if (remaining === 0) {
+      setQuantity(0);
+      return;
+    }
+    setQuantity((current) => Math.min(Math.max(current || 1, 1), remaining));
+  }, [remaining, selectedTicket]);
+
+  function showToast(type: 'success' | 'error', message: string) {
+    setToast({ type, message });
+    window.setTimeout(() => setToast(null), 3200);
+  }
+
+  async function submitBooking() {
     if (!user) {
+      showToast('error', 'Vui lòng đăng nhập để đặt vé.');
       router.push('/login');
       return;
     }
+    if (!selectedTicket || remaining === 0 || quantity < 1 || quantity > remaining) {
+      showToast('error', 'Số lượng vé không hợp lệ.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
-      const booking = await createBooking(id, ticketId, quantity);
+      const booking = await createBooking(id, selectedTicket._id, quantity);
       await payBooking(booking._id);
-      router.push('/my-tickets');
+      showToast('success', 'Đặt vé thành công. Đang chuyển đến vé của tôi...');
+      window.setTimeout(() => router.push('/my-tickets'), 900);
     } catch (err) {
-      setError(getErrorMessage(err));
+      const message = getErrorMessage(err);
+      setError(message);
+      showToast('error', message);
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (loading) return <div className="h-96 animate-pulse rounded bg-white shadow-soft ring-1 ring-sky-100" />;
-  if (!event) return <div className="rounded bg-white p-6 shadow-soft ring-1 ring-sky-100">Không tìm thấy sự kiện.</div>;
+  if (loading) return <EventDetailSkeleton />;
+
+  if (!event) {
+    return (
+      <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200">
+        Không tìm thấy sự kiện.
+      </div>
+    );
+  }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-      <section className="overflow-hidden rounded bg-white shadow-soft ring-1 ring-sky-100">
-        <img className="h-80 w-full object-cover" src={event.image || fallbackImage} alt={event.title} />
-        <div className="space-y-4 p-5">
-          <h1 className="text-3xl font-bold">{event.title}</h1>
-          <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-            <span className="flex items-center gap-2"><MapPin size={17} />{event.location}</span>
-            <span>{new Date(event.startDate).toLocaleString('vi-VN')}</span>
-            <span>{event.category}</span>
-          </div>
-          <p className="leading-7 text-slate-700">{event.description}</p>
-        </div>
-      </section>
+    <>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+        <EventDetailSection event={event} tickets={tickets} />
+        <TicketBookingCard
+          tickets={tickets}
+          selectedTicketId={ticketId}
+          quantity={quantity}
+          submitting={submitting}
+          error={error}
+          onTicketChange={setTicketId}
+          onQuantityChange={setQuantity}
+          onSubmit={submitBooking}
+        />
+      </div>
 
-      <aside className="h-fit rounded bg-white p-5 shadow-soft ring-1 ring-sky-100">
-        <h2 className="text-xl font-bold">Chọn vé</h2>
-        <form onSubmit={onBook} className="mt-4 space-y-4">
-          <select className="w-full" value={ticketId} onChange={(e) => setTicketId(e.target.value)} required>
-            {tickets.map((ticket) => (
-              <option key={ticket._id} value={ticket._id}>
-                {ticket.name} - {ticket.price.toLocaleString('vi-VN')}đ còn {ticket.quantity - ticket.sold}
-              </option>
-            ))}
-          </select>
-          <input
-            className="w-full"
-            type="number"
-            min={1}
-            max={selectedTicket ? selectedTicket.quantity - selectedTicket.sold : 1}
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-          />
-          <div className="flex items-center justify-between border-t border-sky-100 pt-4">
-            <span>Tổng tiền</span>
-            <strong>{total.toLocaleString('vi-VN')}đ</strong>
-          </div>
-          {error && <p className="text-sm text-rose-700">{error}</p>}
-          <button
-            disabled={submitting || !ticketId}
-            className="flex w-full items-center justify-center gap-2 rounded bg-coral px-4 py-2 font-semibold text-white shadow-sm hover:bg-[#ff5959] disabled:opacity-60"
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
+            className="fixed bottom-5 right-5 z-50 flex max-w-sm items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-semibold text-slate-800 shadow-2xl dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           >
-            <CreditCard size={18} />
-            {submitting ? 'Đang thanh toán...' : 'Đặt và thanh toán'}
-          </button>
-        </form>
-      </aside>
-    </div>
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="text-[#14b8a6]" size={20} />
+            ) : (
+              <XCircle className="text-rose-600" size={20} />
+            )}
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

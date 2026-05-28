@@ -5,7 +5,7 @@ export class CreateTicketDto {
   @IsMongoId()
   event: string;
 
-  @IsIn(['VIP', 'Standard', 'Early Bird'])
+  @IsIn(['VIP', 'VVIP', 'Standard', 'Early Bird'])
   name: TicketName;
 
   @IsNumber()

@@ -32,7 +32,7 @@ export type Event = {
   status: EventStatus;
 };
 
-export type TicketName = 'VIP' | 'Standard' | 'Early Bird';
+export type TicketName = 'VIP' | 'VVIP' | 'Standard' | 'Early Bird';
 
 export type Ticket = {
   _id: string;
