@@ -7,13 +7,28 @@ export async function createBooking(event: string, ticket: string, quantity: num
 }
 
 export async function getMyBookings() {
-  const { data } = await api.get<ApiResponse<Booking[]>>('/bookings/my');
+  try {
+    const { data } = await api.get<ApiResponse<Booking[]>>('/bookings/my-tickets');
+    return data.data;
+  } catch (error) {
+    const { data } = await api.get<ApiResponse<Booking[]>>('/bookings/my');
+    return data.data;
+  }
+}
+
+export async function getBooking(id: string) {
+  const { data } = await api.get<ApiResponse<Booking>>(`/bookings/${id}`);
   return data.data;
 }
 
 export async function payBooking(id: string) {
-  const { data } = await api.patch<ApiResponse<Booking>>(`/bookings/${id}/pay`);
-  return data.data;
+  try {
+    const { data } = await api.post<ApiResponse<Booking>>('/payments/checkout', { bookingId: id });
+    return data.data;
+  } catch (error) {
+    const { data } = await api.patch<ApiResponse<Booking>>(`/bookings/${id}/pay`);
+    return data.data;
+  }
 }
 
 export async function cancelBooking(id: string) {

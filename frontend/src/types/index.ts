@@ -43,7 +43,7 @@ export type Ticket = {
   sold: number;
 };
 
-export type BookingStatus = 'pending' | 'paid' | 'cancelled';
+export type BookingStatus = 'pending' | 'paid' | 'cancelled' | 'used';
 
 export type Booking = {
   _id: string;

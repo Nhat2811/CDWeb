@@ -37,11 +37,16 @@ export class BookingsService {
 
   findMy(userId: string) {
     return this.bookingModel
-      .find({ user: userId })
+      .find({ user: new Types.ObjectId(userId) })
       .populate('event')
       .populate('ticket')
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async findOneForUser(id: string, user: JwtUser) {
+    const booking = await this.findOwnedBooking(id, user);
+    return booking.populate(['event', 'ticket']);
   }
 
   async pay(id: string, user: JwtUser) {

@@ -20,6 +20,16 @@ export class BookingsController {
     return this.bookingsService.findMy(user.sub);
   }
 
+  @Get('my-tickets')
+  myTicketsAlias(@CurrentUser() user: JwtUser) {
+    return this.bookingsService.findMy(user.sub);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string, @CurrentUser() user: JwtUser) {
+    return this.bookingsService.findOneForUser(id, user);
+  }
+
   @Patch(':id/pay')
   pay(@Param('id') id: string, @CurrentUser() user: JwtUser) {
     return this.bookingsService.pay(id, user);
