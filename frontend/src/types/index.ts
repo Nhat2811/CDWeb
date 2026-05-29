@@ -73,6 +73,7 @@ export type Dashboard = {
   totalEvents: number;
   totalTicketsSold: number;
   totalRevenue: number;
+  totalUsers?: number;
   recentBookings: Booking[];
 };
 

@@ -5,7 +5,7 @@ import * as QRCode from 'qrcode';
 import { JwtUser } from '../common/types/jwt-user.type';
 import { TicketsService } from '../tickets/tickets.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { Booking } from './schemas/booking.schema';
+import { Booking, BookingStatus } from './schemas/booking.schema';
 
 @Injectable()
 export class BookingsService {
@@ -95,9 +95,30 @@ export class BookingsService {
       .exec();
   }
 
+  findAll() {
+    return this.bookingModel
+      .find()
+      .populate('user', 'name email phone role')
+      .populate('event', 'title startDate location image')
+      .populate('ticket', 'name price')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async updateStatus(id: string, status: BookingStatus) {
+    const booking = await this.bookingModel
+      .findByIdAndUpdate(id, { status }, { new: true })
+      .populate('user', 'name email phone role')
+      .populate('event', 'title startDate location image')
+      .populate('ticket', 'name price')
+      .exec();
+    if (!booking) throw new NotFoundException('Booking not found');
+    return booking;
+  }
+
   async revenue() {
     const [result] = await this.bookingModel.aggregate<{ total: number }>([
-      { $match: { status: 'paid' } },
+      { $match: { status: { $in: ['paid', 'used'] } } },
       { $group: { _id: null, total: { $sum: '$totalPrice' } } },
     ]);
     return result?.total ?? 0;

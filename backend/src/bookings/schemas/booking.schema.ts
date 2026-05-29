@@ -5,7 +5,7 @@ import { Ticket } from '../../tickets/schemas/ticket.schema';
 import { User } from '../../users/schemas/user.schema';
 
 export type BookingDocument = HydratedDocument<Booking>;
-export type BookingStatus = 'pending' | 'paid' | 'cancelled';
+export type BookingStatus = 'pending' | 'paid' | 'cancelled' | 'used';
 
 @Schema({ timestamps: true })
 export class Booking {
@@ -24,7 +24,7 @@ export class Booking {
   @Prop({ required: true, min: 0 })
   totalPrice: number;
 
-  @Prop({ enum: ['pending', 'paid', 'cancelled'], default: 'pending', index: true })
+  @Prop({ enum: ['pending', 'paid', 'cancelled', 'used'], default: 'pending', index: true })
   status: BookingStatus;
 
   @Prop({ required: true })

@@ -4,7 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import { Model } from 'mongoose';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import { User } from './schemas/user.schema';
+import { User, UserRole } from './schemas/user.schema';
 
 type CreateUserInput = {
   name: string;
@@ -30,6 +30,22 @@ export class UsersService {
     const user = await this.userModel.findById(id).select('-password').exec();
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  findAll() {
+    return this.userModel.find().select('-password').sort({ createdAt: -1 }).exec();
+  }
+
+  async updateRole(id: string, role: UserRole) {
+    const user = await this.userModel.findByIdAndUpdate(id, { role }, { new: true }).select('-password').exec();
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async remove(id: string) {
+    const user = await this.userModel.findByIdAndDelete(id).select('-password').exec();
+    if (!user) throw new NotFoundException('User not found');
+    return { deleted: true };
   }
 
   async updateProfile(id: string, dto: UpdateProfileDto) {
