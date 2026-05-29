@@ -23,8 +23,8 @@ export async function getBooking(id: string) {
 
 export async function payBooking(id: string) {
   try {
-    const { data } = await api.post<ApiResponse<Booking>>('/payments/checkout', { bookingId: id });
-    return data.data;
+    const { data } = await api.post<ApiResponse<Booking | { booking: Booking }>>('/payments/checkout', { bookingId: id });
+    return 'booking' in data.data ? data.data.booking : data.data;
   } catch (error) {
     const { data } = await api.patch<ApiResponse<Booking>>(`/bookings/${id}/pay`);
     return data.data;

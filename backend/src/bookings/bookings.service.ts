@@ -52,8 +52,26 @@ export class BookingsService {
   async pay(id: string, user: JwtUser) {
     const booking = await this.findOwnedBooking(id, user);
     if (booking.status === 'cancelled') throw new BadRequestException('Booking is cancelled');
+    if (booking.status === 'paid') {
+      throw new BadRequestException('Booking is already paid');
+    }
+    if (booking.status !== 'pending') {
+      throw new BadRequestException('Only pending bookings can be paid');
+    }
     booking.status = 'paid';
-    return booking.save();
+    booking.qrCode = await QRCode.toDataURL(
+      JSON.stringify({
+        booking: booking._id.toString(),
+        user: booking.user.toString(),
+        event: booking.event.toString(),
+        ticket: booking.ticket.toString(),
+        quantity: booking.quantity,
+        status: 'paid',
+        issuedAt: new Date().toISOString(),
+      }),
+    );
+    const savedBooking = await booking.save();
+    return savedBooking.populate(['event', 'ticket']);
   }
 
   async cancel(id: string, user: JwtUser) {

@@ -126,10 +126,10 @@ async function seed() {
     eventCount += 1;
 
     const ticketPresets = [
-      { name: 'Early Bird', price: 150000 + index * 10000, quantity: 80 + index * 5 },
-      { name: 'Standard', price: 280000 + index * 15000, quantity: 150 + index * 8 },
-      { name: 'VIP', price: 650000 + index * 25000, quantity: 40 + index * 3 },
-      { name: 'VVIP', price: 1200000 + index * 35000, quantity: 18 + index * 2 },
+      { name: 'Early Bird', price: 150000 + index * 10000, quantity: 100 },
+      { name: 'Standard', price: 280000 + index * 15000, quantity: 100 },
+      { name: 'VIP', price: 650000 + index * 25000, quantity: 100 },
+      { name: 'VVIP', price: 1200000 + index * 35000, quantity: 100 },
     ];
 
     for (const preset of ticketPresets) {

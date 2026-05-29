@@ -45,6 +45,10 @@ export type Ticket = {
 
 export type BookingStatus = 'pending' | 'paid' | 'cancelled' | 'used';
 
+export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'cancelled';
+
+export type PaymentCheckoutMethod = 'card' | 'bank_transfer' | 'e_wallet';
+
 export type Booking = {
   _id: string;
   user: User | string;
@@ -55,6 +59,14 @@ export type Booking = {
   status: BookingStatus;
   qrCode: string;
   createdAt: string;
+};
+
+export type PaymentStatusResponse = {
+  bookingId: string;
+  method?: PaymentCheckoutMethod;
+  status: BookingStatus;
+  qrCode?: string;
+  booking: Booking;
 };
 
 export type Dashboard = {

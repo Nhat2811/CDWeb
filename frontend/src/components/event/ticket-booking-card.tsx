@@ -19,7 +19,7 @@ type TicketBookingCardProps = {
   error?: string;
   onTicketChange: (ticketId: string) => void;
   onQuantityChange: (quantity: number) => void;
-  onSubmit: () => Promise<void>;
+  onSubmit: (discountCode?: string) => Promise<void>;
 };
 
 export function TicketBookingCard({
@@ -152,7 +152,7 @@ export function TicketBookingCard({
                   disabled={submitting}
                   onClick={async () => {
                     setConfirmOpen(false);
-                    await onSubmit();
+                    await onSubmit(discountCode);
                   }}
                 >
                   <TicketCheck size={18} />

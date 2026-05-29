@@ -8,7 +8,7 @@ import { EventDetailSection } from '@/components/event/event-detail-section';
 import { EventDetailSkeleton } from '@/components/event/event-detail-skeleton';
 import { TicketBookingCard } from '@/components/event/ticket-booking-card';
 import { getErrorMessage } from '@/services/api';
-import { createBooking, payBooking } from '@/services/bookings.service';
+import { createBooking } from '@/services/bookings.service';
 import { getEvent, getTickets } from '@/services/events.service';
 import { useAuth } from '@/store/auth-store';
 import { Event, Ticket } from '@/types';
@@ -69,7 +69,7 @@ export default function EventDetailPage() {
     window.setTimeout(() => setToast(null), 3200);
   }
 
-  async function submitBooking() {
+  async function submitBooking(discountCode?: string) {
     if (!user) {
       showToast('error', 'Vui lòng đăng nhập để đặt vé.');
       router.push('/login');
@@ -84,9 +84,9 @@ export default function EventDetailPage() {
     setError('');
     try {
       const booking = await createBooking(id, selectedTicket._id, quantity);
-      await payBooking(booking._id);
-      showToast('success', 'Đặt vé thành công. Đang chuyển đến vé của tôi...');
-      window.setTimeout(() => router.push('/my-tickets'), 900);
+      showToast('success', 'Đã tạo booking. Đang chuyển sang thanh toán...');
+      const query = discountCode?.trim() ? `?discountCode=${encodeURIComponent(discountCode.trim())}` : '';
+      window.setTimeout(() => router.push(`/payments/${booking._id}${query}`), 500);
     } catch (err) {
       const message = getErrorMessage(err);
       setError(message);
