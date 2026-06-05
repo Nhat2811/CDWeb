@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { getErrorMessage } from '@/services/api';
 import {
+  checkInAdminBooking,
   deleteAdminUser,
   getAdminBookings,
   getAdminUsers,
@@ -189,6 +190,16 @@ export default function AdminPage() {
     }
   }
 
+  async function checkInBooking(id: string) {
+    try {
+      await checkInAdminBooking(id);
+      setMessage('Đã check-in vé.');
+      await load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  }
+
   async function changeUserRole(id: string, role: UserRole) {
     try {
       await updateAdminUserRole(id, role);
@@ -273,7 +284,7 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'bookings' && (
-        <BookingsTab search={search} setSearch={setSearch} bookings={filteredBookings} onStatusChange={changeBookingStatus} />
+        <BookingsTab search={search} setSearch={setSearch} bookings={filteredBookings} onStatusChange={changeBookingStatus} onCheckIn={checkInBooking} />
       )}
 
       {activeTab === 'users' && (
@@ -446,11 +457,23 @@ function EventsTab(props: {
   );
 }
 
-function BookingsTab({ search, setSearch, bookings, onStatusChange }: { search: string; setSearch: (value: string) => void; bookings: Booking[]; onStatusChange: (id: string, status: BookingStatus) => Promise<void> }) {
+function BookingsTab({
+  search,
+  setSearch,
+  bookings,
+  onStatusChange,
+  onCheckIn,
+}: {
+  search: string;
+  setSearch: (value: string) => void;
+  bookings: Booking[];
+  onStatusChange: (id: string, status: BookingStatus) => Promise<void>;
+  onCheckIn: (id: string) => Promise<void>;
+}) {
   return (
     <Card className="p-5">
       <TableHeader title="Quản lý booking" search={search} setSearch={setSearch} placeholder="Tìm booking, email, sự kiện..." />
-      <AdminBookingTable bookings={bookings} onStatusChange={onStatusChange} />
+      <AdminBookingTable bookings={bookings} onStatusChange={onStatusChange} onCheckIn={onCheckIn} />
     </Card>
   );
 }
@@ -506,7 +529,17 @@ function UsersTab({ search, setSearch, users, onRoleChange, onRemove }: { search
   );
 }
 
-function AdminBookingTable({ bookings, compact, onStatusChange }: { bookings: Booking[]; compact?: boolean; onStatusChange?: (id: string, status: BookingStatus) => Promise<void> }) {
+function AdminBookingTable({
+  bookings,
+  compact,
+  onStatusChange,
+  onCheckIn,
+}: {
+  bookings: Booking[];
+  compact?: boolean;
+  onStatusChange?: (id: string, status: BookingStatus) => Promise<void>;
+  onCheckIn?: (id: string) => Promise<void>;
+}) {
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="w-full min-w-[860px] text-left text-sm">
@@ -518,6 +551,7 @@ function AdminBookingTable({ bookings, compact, onStatusChange }: { bookings: Bo
             <th>Tổng</th>
             <th>Trạng thái</th>
             {!compact && <th>Ngày tạo</th>}
+            {onCheckIn && <th className="text-right">Check-in</th>}
           </tr>
         </thead>
         <tbody>
@@ -540,6 +574,13 @@ function AdminBookingTable({ bookings, compact, onStatusChange }: { bookings: Bo
                 )}
               </td>
               {!compact && <td>{new Date(booking.createdAt).toLocaleString('vi-VN')}</td>}
+              {onCheckIn && (
+                <td className="text-right">
+                  <Button type="button" variant="outline" disabled={booking.status !== 'paid'} onClick={() => void onCheckIn(booking._id)}>
+                    Check-in
+                  </Button>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

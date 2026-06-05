@@ -16,6 +16,11 @@ export async function updateAdminBookingStatus(id: string, status: BookingStatus
   return data.data;
 }
 
+export async function checkInAdminBooking(id: string) {
+  const { data } = await api.patch<ApiResponse<Booking>>(`/bookings/${id}/check-in`);
+  return data.data;
+}
+
 export async function getAdminUsers() {
   const { data } = await api.get<ApiResponse<User[]>>('/admin/users');
   return data.data;

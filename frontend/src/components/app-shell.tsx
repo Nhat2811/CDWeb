@@ -1,9 +1,9 @@
 'use client';
 
+import clsx from 'clsx';
+import { CalendarDays, Facebook, Instagram, LayoutDashboard, LogOut, Mail, MapPin, Phone, Ticket, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { CalendarDays, LayoutDashboard, LogOut, Ticket, UserRound } from 'lucide-react';
-import clsx from 'clsx';
 import { useAuth } from '@/store/auth-store';
 
 const nav = [
@@ -12,13 +12,26 @@ const nav = [
   { href: '/admin', label: 'Admin', icon: LayoutDashboard, admin: true },
 ];
 
+const footerLinks = [
+  { href: '/', label: 'Khám phá sự kiện' },
+  { href: '/my-tickets', label: 'Vé của tôi' },
+  { href: '/profile', label: 'Tài khoản' },
+];
+
+const supportLinks = [
+  { href: '/', label: 'Hướng dẫn đặt vé' },
+  { href: '/payments/result', label: 'Tra cứu thanh toán' },
+  { href: '/login', label: 'Đăng nhập' },
+];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const year = new Date().getFullYear();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-skywash via-white to-mintwash text-ink">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-skywash via-white to-mintwash text-ink">
       <header className="sticky top-0 z-30 border-b border-sky-100 bg-white/90 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2 text-lg font-bold">
@@ -75,7 +88,94 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+
+      <footer className="mt-8 border-t border-teal-100 bg-white/92 backdrop-blur">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:grid-cols-[1.4fr_0.8fr_0.8fr_1fr]">
+          <div>
+            <Link href="/" className="inline-flex items-center gap-2 text-lg font-extrabold text-slate-950">
+              <span className="grid h-10 w-10 place-items-center rounded bg-[#14b8a6] text-white shadow-sm">
+                <Ticket size={20} />
+              </span>
+              Event Booking
+            </Link>
+            <p className="mt-4 max-w-sm text-sm leading-6 text-slate-500">
+              Nền tảng đặt vé sự kiện, quản lý booking, thanh toán và check-in QR dành cho demo hệ thống bán vé trực tuyến.
+            </p>
+            <div className="mt-5 flex items-center gap-2">
+              <FooterIconButton label="Facebook">
+                <Facebook size={17} />
+              </FooterIconButton>
+              <FooterIconButton label="Instagram">
+                <Instagram size={17} />
+              </FooterIconButton>
+              <FooterIconButton label="Email">
+                <Mail size={17} />
+              </FooterIconButton>
+            </div>
+          </div>
+
+          <FooterLinkGroup title="Điều hướng" links={footerLinks} />
+          <FooterLinkGroup title="Hỗ trợ" links={supportLinks} />
+
+          <div>
+            <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-950">Liên hệ</h2>
+            <div className="mt-4 space-y-3 text-sm text-slate-500">
+              <ContactLine icon={<MapPin size={17} />} text="TP. Hồ Chí Minh, Việt Nam" />
+              <ContactLine icon={<Phone size={17} />} text="0900 000 000" />
+              <ContactLine icon={<Mail size={17} />} text="support@eventbooking.local" />
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-100">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <p>© {year} Event Booking System. All rights reserved.</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              <span>Thanh toán an toàn</span>
+              <span>QR check-in</span>
+              <span>Responsive demo</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
+  );
+}
+
+function FooterLinkGroup({ title, links }: { title: string; links: Array<{ href: string; label: string }> }) {
+  return (
+    <div>
+      <h2 className="text-sm font-extrabold uppercase tracking-wide text-slate-950">{title}</h2>
+      <div className="mt-4 grid gap-3 text-sm">
+        {links.map((link) => (
+          <Link key={`${title}-${link.label}`} href={link.href} className="text-slate-500 transition hover:text-[#14b8a6]">
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ContactLine({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[#14b8a6]">{icon}</span>
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function FooterIconButton({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      title={label}
+      className="grid h-9 w-9 place-items-center rounded border border-teal-100 bg-teal-50 text-[#14b8a6] transition hover:bg-[#14b8a6] hover:text-white"
+    >
+      {children}
+    </button>
   );
 }
