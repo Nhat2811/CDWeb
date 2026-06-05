@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { JwtUser } from '../common/types/jwt-user.type';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -38,5 +40,12 @@ export class BookingsController {
   @Patch(':id/cancel')
   cancel(@Param('id') id: string, @CurrentUser() user: JwtUser) {
     return this.bookingsService.cancel(id, user);
+  }
+
+  @Patch(':id/check-in')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  checkIn(@Param('id') id: string) {
+    return this.bookingsService.checkIn(id);
   }
 }

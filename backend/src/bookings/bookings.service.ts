@@ -30,6 +30,7 @@ export class BookingsService {
       ticket: new Types.ObjectId(dto.ticket),
       quantity: dto.quantity,
       totalPrice,
+      discountAmount: 0,
       status: 'pending',
       qrCode,
     });
@@ -49,7 +50,7 @@ export class BookingsService {
     return booking.populate(['event', 'ticket']);
   }
 
-  async pay(id: string, user: JwtUser) {
+  async pay(id: string, user: JwtUser, payment?: { totalPrice?: number; discountAmount?: number; discountCode?: string }) {
     const booking = await this.findOwnedBooking(id, user);
     if (booking.status === 'cancelled') throw new BadRequestException('Booking is cancelled');
     if (booking.status === 'paid') {
@@ -58,7 +59,11 @@ export class BookingsService {
     if (booking.status !== 'pending') {
       throw new BadRequestException('Only pending bookings can be paid');
     }
+    if (payment?.totalPrice !== undefined) booking.totalPrice = payment.totalPrice;
+    if (payment?.discountAmount !== undefined) booking.discountAmount = payment.discountAmount;
+    booking.discountCode = payment?.discountCode;
     booking.status = 'paid';
+    booking.paidAt = new Date();
     booking.qrCode = await QRCode.toDataURL(
       JSON.stringify({
         booking: booking._id.toString(),
@@ -67,6 +72,7 @@ export class BookingsService {
         ticket: booking.ticket.toString(),
         quantity: booking.quantity,
         status: 'paid',
+        totalPrice: booking.totalPrice,
         issuedAt: new Date().toISOString(),
       }),
     );
@@ -114,6 +120,23 @@ export class BookingsService {
       .exec();
     if (!booking) throw new NotFoundException('Booking not found');
     return booking;
+  }
+
+  async checkIn(id: string) {
+    const booking = await this.bookingModel
+      .findById(id)
+      .populate('user', 'name email phone role')
+      .populate('event', 'title startDate location image')
+      .populate('ticket', 'name price')
+      .exec();
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.status === 'used') return booking;
+    if (booking.status !== 'paid') {
+      throw new BadRequestException('Only paid bookings can be checked in');
+    }
+    booking.status = 'used';
+    booking.checkedInAt = new Date();
+    return booking.save();
   }
 
   async revenue() {

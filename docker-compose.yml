@@ -15,6 +15,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongo:27017/event_booking
       - FRONTEND_URL=http://localhost:3000
+      - BACKEND_PUBLIC_URL=http://localhost:4000
     ports:
       - "4000:4000"
     depends_on:

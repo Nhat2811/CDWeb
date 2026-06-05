@@ -8,7 +8,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
   const config = app.get(ConfigService);
 
   const allowedOrigins = (config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000')
