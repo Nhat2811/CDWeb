@@ -5,6 +5,11 @@ export type EventQuery = {
   search?: string;
   category?: string;
   status?: string;
+  location?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  minPrice?: string;
+  maxPrice?: string;
 };
 
 export async function getEvents(params?: EventQuery) {

@@ -47,7 +47,7 @@ const bookingSchema = new mongoose.Schema(
     ticket: { type: mongoose.Schema.Types.ObjectId, ref: 'Ticket' },
     quantity: Number,
     totalPrice: Number,
-    status: { type: String, enum: ['pending', 'paid', 'cancelled'], default: 'paid' },
+    status: { type: String, enum: ['pending', 'paid', 'cancelled', 'used'], default: 'paid' },
     qrCode: String,
   },
   { timestamps: true },
@@ -67,19 +67,168 @@ const images = [
 ];
 
 const events = [
-  ['Vietnam Music Night 2026', 'Đêm nhạc live với nhiều nghệ sĩ trẻ, sân khấu ánh sáng hiện đại và khu check-in ngoài trời.', 'Nhạc hội', 'TP. Hồ Chí Minh'],
-  ['Tech Summit Saigon', 'Hội nghị công nghệ về AI, cloud, bảo mật và sản phẩm số dành cho developer và startup.', 'Công nghệ', 'TP. Hồ Chí Minh'],
-  ['Food & Culture Weekend', 'Không gian ẩm thực, workshop văn hóa và biểu diễn acoustic cuối tuần.', 'Ẩm thực', 'Đà Nẵng'],
-  ['Business Growth Forum', 'Diễn đàn tăng trưởng kinh doanh, vận hành, marketing và gọi vốn cho doanh nghiệp vừa và nhỏ.', 'Kinh doanh', 'Hà Nội'],
-  ['Indie Film Screening', 'Chuỗi chiếu phim độc lập kèm phần giao lưu với đạo diễn và ekip sản xuất.', 'Điện ảnh', 'Hà Nội'],
-  ['Art Expo Contemporary', 'Triển lãm nghệ thuật đương đại với tranh, sắp đặt và trình diễn đa phương tiện.', 'Nghệ thuật', 'Huế'],
-  ['Marathon City Run', 'Giải chạy thành phố với cự ly 5K, 10K, 21K và khu phục hồi sau đường chạy.', 'Thể thao', 'Đà Nẵng'],
-  ['Startup Pitch Day', 'Ngày gọi vốn cho startup giai đoạn seed, có mentor, nhà đầu tư và demo booth.', 'Startup', 'TP. Hồ Chí Minh'],
-  ['EDM Beach Festival', 'Lễ hội EDM ngoài trời ven biển với DJ quốc tế, hiệu ứng visual và food zone.', 'Nhạc hội', 'Nha Trang'],
-  ['Book Fair Spring', 'Hội sách mùa xuân, ký tặng tác giả, tọa đàm xuất bản và khu sách thiếu nhi.', 'Sách', 'Cần Thơ'],
-  ['Design Conference', 'Sự kiện dành cho UI/UX, branding, motion design và design system.', 'Thiết kế', 'TP. Hồ Chí Minh'],
-  ['Coffee Workshop Pro', 'Workshop rang xay, cupping, latte art và vận hành quán cà phê.', 'Workshop', 'Đà Lạt'],
+  ['Vietnam Music Night 2026', 'Dem nhac live voi nhieu nghe si tre, san khau anh sang hien dai va khu check-in ngoai troi.', 'Am nhac', 'TP. Ho Chi Minh'],
+  ['EDM Beach Festival', 'Le hoi EDM ngoai troi ven bien voi DJ quoc te, hieu ung visual va food zone.', 'Am nhac', 'Nha Trang'],
+  ['Acoustic Rooftop Session', 'Dem acoustic than mat tren san thuong voi indie band va khong gian chill cuoi tuan.', 'Am nhac', 'Da Lat'],
+  ['K-Pop Dance Concert', 'Dem nhac va dance cover K-Pop voi fan meeting, photobooth va lightstick zone.', 'Am nhac', 'Ha Noi'],
+
+  ['Tech Summit Saigon', 'Hoi nghi cong nghe ve AI, cloud, bao mat va san pham so danh cho developer va startup.', 'Cong nghe', 'TP. Ho Chi Minh'],
+  ['AI Product Day', 'Su kien demo san pham AI, prompt engineering, automation va ung dung AI trong doanh nghiep.', 'Cong nghe', 'Ha Noi'],
+  ['Cloud Native Meetup', 'Workshop ve Kubernetes, observability, CI/CD va kien truc microservices.', 'Cong nghe', 'Da Nang'],
+  ['Cyber Security Lab', 'Buoi thuc hanh bao mat ung dung web, pentest co ban va xu ly su co.', 'Cong nghe', 'TP. Ho Chi Minh'],
+
+  ['Business Growth Forum', 'Dien dan tang truong kinh doanh, van hanh, marketing va goi von cho doanh nghiep vua va nho.', 'Kinh doanh', 'Ha Noi'],
+  ['Startup Pitch Day', 'Ngay goi von cho startup giai doan seed, co mentor, nha dau tu va demo booth.', 'Kinh doanh', 'TP. Ho Chi Minh'],
+  ['E-commerce Masterclass', 'Chuong trinh chia se chien luoc ban hang da kenh, van hanh kho va toi uu chuyen doi.', 'Kinh doanh', 'Can Tho'],
+  ['Sales Leadership Forum', 'Hoi thao quan tri doi ngu sales, CRM, pipeline va du bao doanh thu.', 'Kinh doanh', 'Da Nang'],
+
+  ['Coffee Workshop Pro', 'Workshop rang xay, cupping, latte art va van hanh quan ca phe.', 'Workshop', 'Da Lat'],
+  ['Photography Walk', 'Workshop chup anh duong pho, bo cuc anh va hau ky Lightroom cho nguoi moi.', 'Workshop', 'Hoi An'],
+  ['UX Writing Bootcamp', 'Lop thuc hanh viet microcopy, thong bao loi va content cho san pham so.', 'Workshop', 'TP. Ho Chi Minh'],
+  ['Handmade Candle Class', 'Buoi lam nen thom thu cong, phoi mui va dong goi san pham.', 'Workshop', 'Ha Noi'],
+
+  ['Food & Culture Weekend', 'Khong gian am thuc, workshop van hoa va bieu dien acoustic cuoi tuan.', 'Am thuc', 'Da Nang'],
+  ['Saigon Street Food Tour', 'Ngay hoi am thuc duong pho voi cac gian hang dia phuong va minigame trai nghiem.', 'Am thuc', 'TP. Ho Chi Minh'],
+  ['Vietnamese Cuisine Fair', 'Le hoi mon Viet ba mien, khu bep mo va lop nau an gia dinh.', 'Am thuc', 'Hue'],
+  ['Craft Beer Weekend', 'Su kien thu bia thu cong, food pairing va giao luu voi brewer.', 'Am thuc', 'Ha Noi'],
+
+  ['Marathon City Run', 'Giai chay thanh pho voi cu ly 5K, 10K, 21K va khu phuc hoi sau duong chay.', 'The thao', 'Da Nang'],
+  ['Yoga Sunrise Camp', 'Buoi yoga binh minh, sound healing va khu healthy brunch.', 'The thao', 'Nha Trang'],
+  ['Basketball 3x3 Cup', 'Giai bong ro 3x3 cho cong dong tre, co khu fan zone va trao giai.', 'The thao', 'TP. Ho Chi Minh'],
+  ['Cycling Weekend Challenge', 'Thu thach dap xe cuoi tuan, tram tiep nuoc va khu check-in finisher.', 'The thao', 'Da Lat'],
+
+  ['Art Expo Contemporary', 'Trien lam nghe thuat duong dai voi tranh, sap dat va trinh dien da phuong tien.', 'Nghe thuat', 'Hue'],
+  ['Indie Film Screening', 'Chuong trinh chieu phim doc lap kem phan giao luu voi dao dien va ekip san xuat.', 'Nghe thuat', 'Ha Noi'],
+  ['Design Conference', 'Su kien danh cho UI/UX, branding, motion design va design system.', 'Nghe thuat', 'TP. Ho Chi Minh'],
+  ['Theatre Night', 'Dem kich san khau nho voi phan giao luu dao dien va dien vien.', 'Nghe thuat', 'Da Nang'],
+
+  ['Book Fair Spring', 'Hoi sach mua xuan, ky tang tac gia, toa dam xuat ban va khu sach thieu nhi.', 'Giao duc', 'Can Tho'],
+  ['English Speaking Day', 'Ngay hoi luyen noi tieng Anh voi mentor, mini debate va networking.', 'Giao duc', 'TP. Ho Chi Minh'],
+  ['Career Orientation Expo', 'Ngay hoi dinh huong nghe nghiep, CV clinic va phong van thu.', 'Giao duc', 'Ha Noi'],
+  ['Personal Finance Class', 'Lop quan ly tai chinh ca nhan, tiet kiem, dau tu co ban va ngan sach gia dinh.', 'Giao duc', 'Da Nang'],
 ];
+
+const extraEventsByCategory = {
+  'Am nhac': [
+    'Pop Live Session',
+    'Rock Arena Night',
+    'Jazz Sunset Show',
+    'Hip Hop Street Jam',
+    'Bolero Memories',
+    'Piano Chamber Evening',
+    'DJ Club Circuit',
+    'Folk Song Heritage',
+    'Indie Band Showcase',
+    'Choir Harmony Concert',
+  ],
+  'Cong nghe': [
+    'Frontend Engineering Day',
+    'Backend Architecture Forum',
+    'Mobile App Summit',
+    'Data Analytics Bootcamp',
+    'DevOps Automation Day',
+    'Blockchain Builder Meet',
+    'IoT Smart City Lab',
+    'Product Management Tech',
+    'No-code Startup Workshop',
+    'Game Development Meetup',
+  ],
+  'Kinh doanh': [
+    'SME Strategy Day',
+    'Marketing Performance Forum',
+    'Founder Networking Night',
+    'Retail Innovation Expo',
+    'Finance For Founders',
+    'Brand Growth Clinic',
+    'HR Leadership Summit',
+    'Customer Success Forum',
+    'Export Business Connect',
+    'Investment Readiness Day',
+  ],
+  Workshop: [
+    'Watercolor Weekend',
+    'Content Creator Lab',
+    'Public Speaking Class',
+    'Leather Craft Studio',
+    'Flower Arrangement Day',
+    'Podcast Production Lab',
+    'Resume Clinic Workshop',
+    'Mind Mapping Practice',
+    'Ceramic Handbuilding Class',
+    'Home Barista Starter',
+  ],
+  'Am thuc': [
+    'BBQ Garden Party',
+    'Seafood Tasting Night',
+    'Chocolate Dessert Fair',
+    'Healthy Meal Prep Day',
+    'Regional Noodle Festival',
+    'Tea Tasting Ceremony',
+    'Vegan Food Market',
+    'Bakery Open Kitchen',
+    'Street Snack Carnival',
+    'Chef Table Experience',
+  ],
+  'The thao': [
+    'Football Fan Cup',
+    'Badminton Community Open',
+    'Swimming Sprint Day',
+    'Trail Running Challenge',
+    'Fitness Bootcamp',
+    'Climbing Beginner Day',
+    'Table Tennis League',
+    'Pickleball Social Cup',
+    'Martial Arts Showcase',
+    'SUP Weekend Race',
+  ],
+  'Nghe thuat': [
+    'Gallery Night Walk',
+    'Modern Dance Stage',
+    'Short Film Weekend',
+    'Illustration Market',
+    'Calligraphy Practice Day',
+    'Photography Exhibition',
+    'Creative Poster Fair',
+    'Sculpture Open Studio',
+    'Traditional Music Theatre',
+    'Digital Art Showcase',
+  ],
+  'Giao duc': [
+    'STEM Kids Day',
+    'University Open Talk',
+    'Scholarship Info Session',
+    'Language Exchange Meet',
+    'Study Abroad Fair',
+    'Coding For Beginners',
+    'Math Challenge Camp',
+    'Research Skills Workshop',
+    'Career Mentor Coffee',
+    'Reading Habit Day',
+  ],
+};
+
+const categoryLocations = {
+  'Am nhac': ['TP. Ho Chi Minh', 'Ha Noi', 'Da Nang', 'Nha Trang', 'Da Lat'],
+  'Cong nghe': ['TP. Ho Chi Minh', 'Ha Noi', 'Da Nang', 'Can Tho'],
+  'Kinh doanh': ['Ha Noi', 'TP. Ho Chi Minh', 'Da Nang', 'Can Tho'],
+  Workshop: ['Da Lat', 'Hoi An', 'TP. Ho Chi Minh', 'Ha Noi'],
+  'Am thuc': ['Da Nang', 'Hue', 'TP. Ho Chi Minh', 'Ha Noi', 'Can Tho'],
+  'The thao': ['Da Nang', 'Nha Trang', 'Da Lat', 'TP. Ho Chi Minh'],
+  'Nghe thuat': ['Hue', 'Ha Noi', 'TP. Ho Chi Minh', 'Da Nang'],
+  'Giao duc': ['Ha Noi', 'TP. Ho Chi Minh', 'Da Nang', 'Can Tho'],
+};
+
+for (const [category, titles] of Object.entries(extraEventsByCategory)) {
+  const locations = categoryLocations[category] || ['TP. Ho Chi Minh'];
+  titles.forEach((title, index) => {
+    events.push([
+      `${title} 2026`,
+      `Su kien ${category.toLowerCase()} mo rong so ${index + 1}, co khu trai nghiem, networking va check-in QR cho khach tham du.`,
+      category,
+      locations[index % locations.length],
+    ]);
+  });
+}
 
 async function ensureUser(name, email, role) {
   const password = await bcrypt.hash('123456', 10);
@@ -95,7 +244,7 @@ async function seed() {
   console.log(`Connected to ${uri}`);
 
   const admin = await ensureUser('Admin Demo', 'admin@example.com', 'admin');
-  const customer = await ensureUser('Customer Demo', 'customer@example.com', 'customer');
+  await ensureUser('Customer Demo', 'customer@example.com', 'customer');
 
   let eventCount = 0;
   let ticketCount = 0;
@@ -126,10 +275,10 @@ async function seed() {
     eventCount += 1;
 
     const ticketPresets = [
-      { name: 'Early Bird', price: 150000 + index * 10000, quantity: 100 },
-      { name: 'Standard', price: 280000 + index * 15000, quantity: 100 },
-      { name: 'VIP', price: 650000 + index * 25000, quantity: 100 },
-      { name: 'VVIP', price: 1200000 + index * 35000, quantity: 100 },
+      { name: 'Early Bird', price: 199000, quantity: 100 },
+      { name: 'Standard', price: 349000, quantity: 100 },
+      { name: 'VIP', price: 799000, quantity: 100 },
+      { name: 'VVIP', price: 1499000, quantity: 100 },
     ];
 
     for (const preset of ticketPresets) {
@@ -142,6 +291,7 @@ async function seed() {
       ticketCount += 1;
 
       if (index < 8 && preset.name !== 'VIP') {
+        const customer = await User.findOne({ email: 'customer@example.com' });
         const existing = await Booking.findOne({ user: customer._id, event: event._id, ticket: ticket._id });
         if (!existing) {
           const quantity = preset.name === 'Early Bird' ? 2 : 1;

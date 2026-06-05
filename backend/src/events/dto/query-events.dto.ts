@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsIn, IsNumberString, IsOptional, IsString } from 'class-validator';
 import { EventStatus } from '../schemas/event.schema';
 
 export class QueryEventsDto {
@@ -13,4 +13,24 @@ export class QueryEventsDto {
   @IsOptional()
   @IsIn(['draft', 'published', 'cancelled'])
   status?: EventStatus;
+
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  minPrice?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  maxPrice?: string;
 }
