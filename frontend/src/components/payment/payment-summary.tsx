@@ -9,6 +9,7 @@ type PaymentSummaryProps = {
   booking: Booking;
   user: User | null;
   discountCode?: string;
+  previewDiscountAmount?: number;
   status: PaymentStatus;
 };
 
@@ -26,11 +27,14 @@ function getBookerEmail(user: Booking['user'], fallback: User | null) {
   return fallback?.email ?? 'Chưa có email';
 }
 
-export function PaymentSummary({ booking, user, discountCode, status }: PaymentSummaryProps) {
+export function PaymentSummary({ booking, user, discountCode, previewDiscountAmount = 0, status }: PaymentSummaryProps) {
   const event = booking.event;
   const ticket = booking.ticket;
-  const normalizedDiscount = discountCode?.trim() || 'Không áp dụng';
   const unitPrice = ticket?.price ?? Math.round(booking.totalPrice / Math.max(booking.quantity, 1));
+  const originalAmount = unitPrice * booking.quantity;
+  const discountAmount = booking.discountAmount ?? previewDiscountAmount;
+  const payableAmount = booking.status === 'pending' ? Math.max(originalAmount - discountAmount, 0) : booking.totalPrice;
+  const normalizedDiscount = booking.discountCode || discountCode?.trim().toUpperCase() || 'Không áp dụng';
 
   return (
     <Card className="overflow-hidden">
@@ -46,7 +50,7 @@ export function PaymentSummary({ booking, user, discountCode, status }: PaymentS
         </div>
       </div>
 
-      <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <InfoItem icon={Ticket} label="Loại vé" value={ticket?.name ?? 'Vé'} />
@@ -75,14 +79,30 @@ export function PaymentSummary({ booking, user, discountCode, status }: PaymentS
                 {getBookerEmail(booking.user, user)}
               </p>
             </div>
-            <div className="border-t border-teal-200 pt-3 dark:border-teal-900">
-              <p className="text-slate-500">Tổng tiền</p>
-              <p className="text-3xl font-extrabold text-slate-950 dark:text-white">{formatCurrency(booking.totalPrice)}</p>
+            <div className="space-y-2 border-t border-teal-200 pt-3 dark:border-teal-900">
+              <MoneyRow label="Tạm tính" value={originalAmount} />
+              <MoneyRow label="Giảm giá" value={-discountAmount} highlight={discountAmount > 0} />
+              <div className="pt-2">
+                <p className="text-slate-500">Cần thanh toán</p>
+                <p className="text-3xl font-extrabold text-slate-950 dark:text-white">{formatCurrency(payableAmount)}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </Card>
+  );
+}
+
+function MoneyRow({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-slate-500">{label}</span>
+      <strong className={highlight ? 'text-emerald-700' : 'text-slate-800 dark:text-slate-100'}>
+        {value < 0 ? '-' : ''}
+        {formatCurrency(Math.abs(value))}
+      </strong>
+    </div>
   );
 }
 

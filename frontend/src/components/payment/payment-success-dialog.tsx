@@ -3,15 +3,16 @@
 import { motion } from 'framer-motion';
 import { CheckCircle2, TicketCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Booking } from '@/types';
+import { Booking, PaymentReceipt } from '@/types';
 
 type PaymentSuccessDialogProps = {
   booking: Booking;
+  receipt?: PaymentReceipt | null;
   open: boolean;
   onGoToTickets: () => void;
 };
 
-export function PaymentSuccessDialog({ booking, open, onGoToTickets }: PaymentSuccessDialogProps) {
+export function PaymentSuccessDialog({ booking, receipt, open, onGoToTickets }: PaymentSuccessDialogProps) {
   if (!open) return null;
 
   return (
@@ -34,6 +35,14 @@ export function PaymentSuccessDialog({ booking, open, onGoToTickets }: PaymentSu
         <p className="mt-2 text-sm leading-6 text-slate-500">
           Booking #{booking._id.slice(-8).toUpperCase()} đã được cập nhật sang trạng thái paid. QR code vé đã sẵn sàng trong Vé của tôi.
         </p>
+
+        {receipt && (
+          <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 p-3 text-sm text-slate-700">
+            <p className="font-bold text-slate-950">Mã giao dịch: {receipt.transactionCode}</p>
+            <p>Đã thanh toán: {receipt.paidAmount.toLocaleString('vi-VN')}đ</p>
+            <p>Email xác nhận: mock sent</p>
+          </div>
+        )}
 
         {booking.qrCode && (
           <div className="mt-5 flex justify-center rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800">
