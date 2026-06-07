@@ -111,6 +111,14 @@ npm run seed --prefix backend
 - MoMo can `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`, `MOMO_ENDPOINT`.
 - `BACKEND_PUBLIC_URL` phai tro ve backend public URL de gateway redirect/IPN ve dung server.
 
+### The Test VNPay Sandbox
+
+- Ngan hang: `NCB`
+- So the: `9704198526191432198`
+- Ten chu the: `NGUYEN VAN A`
+- Ngay phat hanh: `07/15`
+- Mat khau OTP: `123456`
+
 ## Ghi Chu Van Hanh
 
 - Phuong thuc xac nhan noi bo dung cho moi truong chua cau hinh credentials cong thanh toan.
