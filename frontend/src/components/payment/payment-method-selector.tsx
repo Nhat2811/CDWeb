@@ -1,10 +1,10 @@
 'use client';
 
 import clsx from 'clsx';
-import { Building2, CreditCard, Landmark, WalletCards, XCircle } from 'lucide-react';
+import { CreditCard, Landmark, WalletCards } from 'lucide-react';
 import { PaymentGatewayConfig, PaymentProvider } from '@/types';
 
-export type PaymentMethodValue = 'mock_card' | 'stripe' | 'vnpay' | 'momo' | 'mock_failure';
+export type PaymentMethodValue = 'vnpay' | 'momo';
 
 const methods: Array<{
   value: PaymentMethodValue;
@@ -14,39 +14,18 @@ const methods: Array<{
   provider: PaymentProvider;
 }> = [
   {
-    value: 'stripe',
-    title: 'Stripe',
-    description: 'Checkout bang Stripe sandbox, xac nhan qua callback/webhook.',
-    Icon: CreditCard,
-    provider: 'stripe',
-  },
-  {
     value: 'vnpay',
     title: 'VNPay',
-    description: 'Redirect sang VNPay sandbox va xac thuc secure hash.',
+    description: 'Thanh toan qua cong VNPay.',
     Icon: Landmark,
     provider: 'vnpay',
   },
   {
     value: 'momo',
     title: 'MoMo',
-    description: 'Redirect sang MoMo test gateway va xac nhan IPN.',
+    description: 'Thanh toan bang vi MoMo.',
     Icon: WalletCards,
     provider: 'momo',
-  },
-  {
-    value: 'mock_card',
-    title: 'Mock success',
-    description: 'Thanh toan gia lap thanh cong khi chua cau hinh cong that.',
-    Icon: Building2,
-    provider: 'mock',
-  },
-  {
-    value: 'mock_failure',
-    title: 'Mock that bai',
-    description: 'Tao giao dich failed de kiem tra thanh toan lai.',
-    Icon: XCircle,
-    provider: 'mock',
   },
 ];
 
@@ -64,9 +43,9 @@ export function PaymentMethodSelector({ value, disabled, gatewayConfig, onChange
         const Icon = method.Icon;
         const selected = value === method.value;
         const providerConfig = gatewayConfig?.[method.provider];
-        const canUseDemoQr = method.provider === 'momo' || method.provider === 'vnpay';
-        const unavailable = method.provider !== 'mock' && !canUseDemoQr && providerConfig?.enabled === false;
-        const demoQr = canUseDemoQr && providerConfig?.enabled === false;
+        const canUseQrFallback = method.provider === 'momo' || method.provider === 'vnpay';
+        const unavailable = !canUseQrFallback && providerConfig?.enabled === false;
+        const qrFallback = canUseQrFallback && providerConfig?.enabled === false;
         const isDisabled = disabled || unavailable;
 
         return (
@@ -94,16 +73,16 @@ export function PaymentMethodSelector({ value, disabled, gatewayConfig, onChange
             <span className="min-w-0">
               <span className="flex flex-wrap items-center gap-2">
                 <span className="font-bold text-slate-950 dark:text-white">{method.title}</span>
-                {(unavailable || demoQr) && (
+                {(unavailable || qrFallback) && (
                   <span
                     className={clsx(
                       'rounded border px-2 py-0.5 text-[11px] font-bold',
-                      demoQr
+                      qrFallback
                         ? 'border-teal-200 bg-teal-50 text-teal-700'
                         : 'border-amber-200 bg-amber-50 text-amber-700',
                     )}
                   >
-                    {demoQr ? 'QR demo' : 'Chua cau hinh'}
+                    {qrFallback ? 'QR' : 'Chua cau hinh'}
                   </span>
                 )}
               </span>

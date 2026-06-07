@@ -1,6 +1,6 @@
 # Event Booking System
 
-Fullstack web app dat ve su kien, gom luong khach hang, thanh toan gia lap, ve QR va trang quan tri.
+Fullstack web app dat ve su kien, gom luong khach hang, thanh toan, ve QR va trang quan tri.
 
 ## Tech Stack
 
@@ -28,27 +28,26 @@ npm run dev
 docker compose up --build
 ```
 
-Sau khi cac container chay xong, seed du lieu demo:
+Sau khi cac container chay xong, khoi tao du lieu:
 
 ```bash
 npm run seed --prefix backend
 ```
 
-## Tai Khoan Demo
+## Tai Khoan Khoi Tao
 
 - Admin: `admin@example.com` / `123456`
 - Customer: `customer@example.com` / `123456`
 
-## Luong Demo Chinh
+## Luong Chinh
 
 1. Dang nhap bang customer.
 2. Vao danh sach su kien, chon su kien, chon loai ve va so luong.
 3. Xac nhan booking va sang trang thanh toan.
-4. Chon mock payment hoac cong thanh toan sandbox: Stripe, VNPay, MoMo.
+4. Chon phuong thuc thanh toan: Stripe, VNPay, MoMo hoac xac nhan noi bo.
 5. Thanh toan thanh cong de cap nhat booking thanh `paid` va xem QR code o trang `Ve cua toi`.
-5. Nhap ma giam gia `EVENT10`, `VIP50` hoac `STUDENT20` de test coupon backend.
-6. Thu phuong thuc `Test that bai` tren trang thanh toan de kiem tra retry payment va lich su transaction.
-7. Dang nhap admin de quan ly dashboard, su kien, ve, booking, nguoi dung va check-in ve paid.
+5. Nhap ma giam gia `EVENT10`, `VIP50` hoac `STUDENT20`.
+6. Dang nhap admin de quan ly dashboard, su kien, ve, booking, nguoi dung va check-in ve paid.
 
 ## API Chinh
 
@@ -112,17 +111,17 @@ npm run seed --prefix backend
 - MoMo can `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`, `MOMO_ENDPOINT`.
 - `BACKEND_PUBLIC_URL` phai tro ve backend public URL de gateway redirect/IPN ve dung server.
 
-## Chuc Nang Mock
+## Ghi Chu Van Hanh
 
-- Van giu mock success/failure de demo khi chua co credentials cong thanh toan.
-- Email xac nhan la mock receipt trong response, chua gui SMTP that.
+- Phuong thuc xac nhan noi bo dung cho moi truong chua cau hinh credentials cong thanh toan.
+- Email xac nhan hien la receipt trong response, chua gui SMTP that.
 - Coupon backend ho tro `EVENT10`, `VIP50`, `STUDENT20`.
 - QR code chua quet camera truc tiep; admin check-in bang booking trong bang admin.
 
-## Du Lieu Demo
+## Du Lieu Khoi Tao
 
 ```bash
 npm run seed --prefix backend
 ```
 
-Seed tao 12 su kien, moi su kien co 4 hang ve va moi hang ve co 100 ve de test mua hang loat. Script seed co the chay lai nhieu lan; cac su kien va ve demo se duoc cap nhat theo title/name hien co.
+Seed tao danh sach su kien, moi su kien co 4 hang ve va moi hang ve co 100 ve. Script seed co the chay lai nhieu lan; cac su kien va ve se duoc cap nhat theo title/name hien co.

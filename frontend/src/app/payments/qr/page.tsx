@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Loader2, QrCode, RefreshCcw, ShieldCheck, Smartphone, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Loader2, QrCode, RefreshCcw, ShieldCheck, Smartphone } from 'lucide-react';
 import QRCode from 'qrcode';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -54,7 +54,7 @@ function PaymentQrContent() {
       amount,
       currency: 'VND',
       note: `PAY ${bookingId}`,
-      demo: true,
+      source: 'event-booking',
     });
   }, [amount, booking?.event?.title, bookingId, label]);
 
@@ -94,12 +94,12 @@ function PaymentQrContent() {
     return () => window.clearInterval(timer);
   }, []);
 
-  async function confirmDemoPayment(simulateFailure = false) {
+  async function confirmPayment() {
     if (!bookingId || processing) return;
     setProcessing(true);
     setError('');
     try {
-      await checkoutPayment(bookingId, checkoutMethodFor(provider), simulateFailure, discountCode, 'mock');
+      await checkoutPayment(bookingId, checkoutMethodFor(provider), false, discountCode, 'mock');
       router.push('/my-tickets');
     } catch (err) {
       setError(getErrorMessage(err));
@@ -136,13 +136,12 @@ function PaymentQrContent() {
               <p className="text-sm font-bold uppercase text-[#14b8a6]">Quet ma thanh toan</p>
               <h1 className="mt-1 text-2xl font-extrabold text-slate-950">Thanh toan bang {label}</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                Mo ung dung {label}, chon quet QR va xac nhan so tien. Trang nay la QR demo khi sandbox key chua duoc cau
-                hinh.
+                Mo ung dung {label}, chon quet QR va xac nhan dung so tien, noi dung chuyen khoan.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded border border-teal-100 bg-teal-50 px-3 py-2 text-sm font-bold text-teal-700">
               <ShieldCheck size={17} />
-              Secure demo
+              Bao mat
             </div>
           </div>
 
@@ -182,9 +181,9 @@ function PaymentQrContent() {
               <div className="rounded-lg border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-slate-700">
                 <div className="mb-2 flex items-center gap-2 font-bold text-slate-950">
                   <Smartphone size={18} className="text-[#14b8a6]" />
-                  Cach demo
+                  Huong dan thanh toan
                 </div>
-                Sau khi quet QR trong buoi demo, bam nut xac nhan ben duoi de he thong cap nhat booking sang paid va sinh ve QR.
+                Sau khi hoan tat thanh toan, bam nut xac nhan ben duoi de he thong cap nhat don hang va sinh ve QR.
               </div>
 
               {error && (
@@ -194,7 +193,7 @@ function PaymentQrContent() {
               )}
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <Button className="h-12" disabled={processing || secondsLeft === 0} onClick={() => void confirmDemoPayment(false)}>
+                <Button className="h-12" disabled={processing || secondsLeft === 0} onClick={() => void confirmPayment()}>
                   {processing ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
                   Da thanh toan
                 </Button>
@@ -211,16 +210,6 @@ function PaymentQrContent() {
                   Tao lai QR
                 </Button>
               </div>
-
-              <Button
-                variant="danger"
-                className="h-11 w-full"
-                disabled={processing}
-                onClick={() => void confirmDemoPayment(true)}
-              >
-                <XCircle size={17} />
-                Gia lap that bai
-              </Button>
             </div>
           </div>
         </Card>

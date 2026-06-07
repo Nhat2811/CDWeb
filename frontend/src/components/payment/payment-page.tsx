@@ -75,7 +75,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
   const { user } = useAuth();
   const initialDiscountCode = searchParams.get('discountCode') ?? '';
   const [booking, setBooking] = useState<Booking | null>(null);
-  const [method, setMethod] = useState<PaymentMethodValue>('mock_card');
+  const [method, setMethod] = useState<PaymentMethodValue>('vnpay');
   const [gatewayConfig, setGatewayConfig] = useState<PaymentGatewayConfig | null>(null);
   const [discountCode, setDiscountCode] = useState(initialDiscountCode);
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
@@ -95,8 +95,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
   const payableAmount = Math.max(subtotal - previewDiscount, 0);
   const canPay = booking?.status === 'pending' && !processing;
   const selectedProvider = resolvePaymentMethod(method).provider;
-  const selectedGatewayUnavailable = selectedProvider === 'stripe' && gatewayConfig?.[selectedProvider]?.enabled === false;
-  const selectedDemoQrGateway =
+  const selectedQrGateway =
     (selectedProvider === 'momo' || selectedProvider === 'vnpay') && gatewayConfig?.[selectedProvider]?.enabled === false;
   const normalizedDiscount = discountCode.trim().toUpperCase();
   const invalidDiscount = Boolean(normalizedDiscount) && previewDiscount === 0 && !couponHints.some((coupon) => coupon.code === normalizedDiscount);
@@ -124,13 +123,6 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
     void load();
   }, [bookingId]);
 
-  useEffect(() => {
-    const provider = resolvePaymentMethod(method).provider;
-    if (provider === 'stripe' && gatewayConfig?.[provider]?.enabled === false) {
-      setMethod('mock_card');
-    }
-  }, [gatewayConfig, method]);
-
   function showToast(type: 'success' | 'error', message: string) {
     setToast({ type, message });
     window.setTimeout(() => setToast(null), 3200);
@@ -138,7 +130,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
 
   async function handleCheckout() {
     if (!booking || !canPay) return;
-    if (selectedDemoQrGateway) {
+    if (selectedQrGateway) {
       const query = new URLSearchParams({
         bookingId: booking._id,
         provider: selectedProvider,
@@ -148,25 +140,16 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
       router.push(`/payments/qr?${query.toString()}`);
       return;
     }
-    if (selectedGatewayUnavailable) {
-      const reason = gatewayConfig?.[selectedProvider]?.reason ?? 'Gateway is not configured';
-      setStatus('failed');
-      setError(reason);
-      showToast('error', reason);
-      return;
-    }
-
     setProcessing(true);
     setStatus('processing');
     setError('');
 
     try {
-      const simulateFailure = method === 'mock_failure';
       const { checkoutMethod, provider } = resolvePaymentMethod(method);
       const response = await checkoutPayment(
         booking._id,
         checkoutMethod,
-        simulateFailure,
+        false,
         normalizedDiscount || undefined,
         provider,
       );
@@ -242,7 +225,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
 
           {gatewayConfig && (
             <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
-              Cong thanh toan that chi bat duoc khi backend co sandbox key. Neu chua co key, MoMo/VNPay se mo trang QR demo de test flow quet ma.
+              Mot so cong thanh toan can cau hinh khoa tich hop tren backend. MoMo/VNPay co the thanh toan bang ma QR khi cong truc tiep chua san sang.
             </div>
           )}
 
@@ -290,7 +273,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
           <div className="grid h-12 w-12 place-items-center rounded bg-teal-50 text-[#14b8a6]">
             <ShieldCheck size={24} />
           </div>
-          <h2 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">Thanh toán giả lập</h2>
+          <h2 className="mt-4 text-xl font-extrabold text-slate-950 dark:text-white">Xác nhận thanh toán</h2>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             Booking chỉ chuyển sang paid khi thanh toán thành công. Nếu giao dịch thất bại, booking vẫn pending và có thể thanh toán lại.
           </p>
@@ -311,14 +294,14 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
                 Receipt #{receipt.transactionCode}
               </p>
               <p>Đã thanh toán: {formatCurrency(receipt.paidAmount)}</p>
-              <p>Email xác nhận: mock sent</p>
+              <p>Email xác nhận: đã gửi</p>
             </div>
           )}
 
           <Button
             type="button"
             className="mt-5 h-12 w-full text-base"
-            disabled={!canPay || invalidDiscount || selectedGatewayUnavailable}
+            disabled={!canPay || invalidDiscount}
             onClick={() => void handleCheckout()}
           >
             {processing ? <Loader2 className="animate-spin" size={19} /> : <CreditCard size={19} />}
@@ -370,10 +353,9 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
 }
 
 function resolvePaymentMethod(method: PaymentMethodValue): { checkoutMethod: PaymentCheckoutMethod; provider: PaymentProvider } {
-  if (method === 'stripe') return { checkoutMethod: 'card', provider: 'stripe' };
   if (method === 'vnpay') return { checkoutMethod: 'bank_transfer', provider: 'vnpay' };
   if (method === 'momo') return { checkoutMethod: 'e_wallet', provider: 'momo' };
-  return { checkoutMethod: 'card', provider: 'mock' };
+  return { checkoutMethod: 'bank_transfer', provider: 'vnpay' };
 }
 
 function PaymentLine({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {

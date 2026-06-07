@@ -62,9 +62,9 @@ export class PaymentsService {
         discountAmount: discount.amount,
         discountCode: discount.code,
         paidAmount: 0,
-        message: 'Mock payment failed. Please try again.',
+        message: 'Payment failed. Please try again.',
       });
-      throw new BadRequestException('Mock payment failed. Please try again.');
+      throw new BadRequestException('Payment failed. Please try again.');
     }
 
     const paidBooking = await this.bookingsService.pay(dto.bookingId, user, {
@@ -82,7 +82,7 @@ export class PaymentsService {
       discountAmount: discount.amount,
       discountCode: discount.code,
       paidAmount,
-      message: 'Mock payment completed. Confirmation email queued.',
+      message: 'Payment completed. Confirmation email queued.',
       paidAt: new Date(),
     });
 
@@ -100,7 +100,7 @@ export class PaymentsService {
     );
 
     return {
-      mock: { enabled: true, reason: 'Available for local demo' },
+      mock: { enabled: true, reason: 'Internal payment confirmation is available' },
       stripe: {
         enabled: hasStripeSecret,
         webhookReady: hasStripeWebhookSecret,

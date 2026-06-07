@@ -101,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Event Booking
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-6 text-slate-500">
-              Nền tảng đặt vé sự kiện, quản lý booking, thanh toán và check-in QR dành cho demo hệ thống bán vé trực tuyến.
+              Nền tảng đặt vé sự kiện, quản lý booking, thanh toán và check-in QR cho hệ thống bán vé trực tuyến.
             </p>
             <div className="mt-5 flex items-center gap-2">
               <FooterIconButton label="Facebook">
@@ -135,7 +135,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               <span>Thanh toán an toàn</span>
               <span>QR check-in</span>
-              <span>Responsive demo</span>
+              <span>Hỗ trợ mọi thiết bị</span>
             </div>
           </div>
         </div>

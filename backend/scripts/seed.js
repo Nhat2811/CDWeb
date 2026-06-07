@@ -73,12 +73,12 @@ const events = [
   ['K-Pop Dance Concert', 'Dem nhac va dance cover K-Pop voi fan meeting, photobooth va lightstick zone.', 'Am nhac', 'Ha Noi'],
 
   ['Tech Summit Saigon', 'Hoi nghi cong nghe ve AI, cloud, bao mat va san pham so danh cho developer va startup.', 'Cong nghe', 'TP. Ho Chi Minh'],
-  ['AI Product Day', 'Su kien demo san pham AI, prompt engineering, automation va ung dung AI trong doanh nghiep.', 'Cong nghe', 'Ha Noi'],
+  ['AI Product Day', 'Su kien gioi thieu san pham AI, prompt engineering, automation va ung dung AI trong doanh nghiep.', 'Cong nghe', 'Ha Noi'],
   ['Cloud Native Meetup', 'Workshop ve Kubernetes, observability, CI/CD va kien truc microservices.', 'Cong nghe', 'Da Nang'],
   ['Cyber Security Lab', 'Buoi thuc hanh bao mat ung dung web, pentest co ban va xu ly su co.', 'Cong nghe', 'TP. Ho Chi Minh'],
 
   ['Business Growth Forum', 'Dien dan tang truong kinh doanh, van hanh, marketing va goi von cho doanh nghiep vua va nho.', 'Kinh doanh', 'Ha Noi'],
-  ['Startup Pitch Day', 'Ngay goi von cho startup giai doan seed, co mentor, nha dau tu va demo booth.', 'Kinh doanh', 'TP. Ho Chi Minh'],
+  ['Startup Pitch Day', 'Ngay goi von cho startup giai doan seed, co mentor, nha dau tu va gian trung bay san pham.', 'Kinh doanh', 'TP. Ho Chi Minh'],
   ['E-commerce Masterclass', 'Chuong trinh chia se chien luoc ban hang da kenh, van hanh kho va toi uu chuyen doi.', 'Kinh doanh', 'Can Tho'],
   ['Sales Leadership Forum', 'Hoi thao quan tri doi ngu sales, CRM, pipeline va du bao doanh thu.', 'Kinh doanh', 'Da Nang'],
 
@@ -243,8 +243,8 @@ async function seed() {
   await mongoose.connect(uri);
   console.log(`Connected to ${uri}`);
 
-  const admin = await ensureUser('Admin Demo', 'admin@example.com', 'admin');
-  await ensureUser('Customer Demo', 'customer@example.com', 'customer');
+  const admin = await ensureUser('System Admin', 'admin@example.com', 'admin');
+  await ensureUser('Customer User', 'customer@example.com', 'customer');
 
   let eventCount = 0;
   let ticketCount = 0;
@@ -314,7 +314,7 @@ async function seed() {
   }
 
   console.log(`Seeded ${eventCount} events, ${ticketCount} tickets, ${bookingCount} new bookings.`);
-  console.log('Demo users: admin@example.com / 123456, customer@example.com / 123456');
+  console.log('Initial users: admin@example.com / 123456, customer@example.com / 123456');
   console.log(`Admin id: ${admin._id}`);
   await mongoose.disconnect();
 }
