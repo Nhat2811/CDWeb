@@ -1,6 +1,9 @@
+const dns = require('dns');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const QRCode = require('qrcode');
+
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/event_booking';
 
