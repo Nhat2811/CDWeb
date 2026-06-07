@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { RefreshCcw, TicketCheck, X, XCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useProtected } from '@/hooks/use-protected';
@@ -23,6 +24,7 @@ type ToastState = {
 
 export function TicketListPage() {
   useProtected();
+  const router = useRouter();
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
@@ -96,6 +98,8 @@ export function TicketListPage() {
   }
 
   async function handlePay(booking: Booking) {
+    router.push(`/payments/${booking._id}`);
+    return;
     setActionLoading(true);
     try {
       await payBooking(booking._id);
