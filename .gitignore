@@ -3,5 +3,5 @@ dist/
 .next/
 .env
 .env.local
-uploads/
+/uploads/
 *.log
