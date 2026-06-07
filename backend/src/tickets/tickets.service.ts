@@ -14,7 +14,7 @@ export class TicketsService {
   }
 
   findByEvent(eventId: string) {
-    return this.ticketModel.find({ event: eventId }).sort({ price: 1 }).exec();
+    return this.ticketModel.find({ event: new Types.ObjectId(eventId) }).sort({ price: 1 }).exec();
   }
 
   async findOne(id: string) {
