@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { RefreshCcw, TicketCheck, XCircle } from 'lucide-react';
+import { RefreshCcw, TicketCheck, X, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useProtected } from '@/hooks/use-protected';
@@ -182,15 +182,31 @@ export function TicketListPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!actionLoading) setConfirmCancel(null);
+            }}
           >
             <motion.div
               initial={{ scale: 0.96, y: 16 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.96, y: 16 }}
               className="w-full max-w-md rounded-lg bg-white p-5 shadow-2xl dark:bg-slate-900"
+              onClick={(event) => event.stopPropagation()}
             >
-              <div className="grid h-12 w-12 place-items-center rounded-full bg-rose-50 text-rose-600">
-                <XCircle size={24} />
+              <div className="flex items-start justify-between gap-4">
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-rose-50 text-rose-600">
+                  <XCircle size={24} />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-9 w-9 p-0"
+                  onClick={() => setConfirmCancel(null)}
+                  disabled={actionLoading}
+                  aria-label="Đóng"
+                >
+                  <X size={18} />
+                </Button>
               </div>
               <h2 className="mt-4 text-xl font-bold text-slate-950 dark:text-white">Xác nhận hủy vé</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">

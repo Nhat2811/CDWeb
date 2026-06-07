@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, TicketCheck } from 'lucide-react';
+import { CheckCircle2, TicketCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Booking, PaymentReceipt } from '@/types';
 
@@ -9,10 +9,11 @@ type PaymentSuccessDialogProps = {
   booking: Booking;
   receipt?: PaymentReceipt | null;
   open: boolean;
+  onClose: () => void;
   onGoToTickets: () => void;
 };
 
-export function PaymentSuccessDialog({ booking, receipt, open, onGoToTickets }: PaymentSuccessDialogProps) {
+export function PaymentSuccessDialog({ booking, receipt, open, onClose, onGoToTickets }: PaymentSuccessDialogProps) {
   if (!open) return null;
 
   return (
@@ -21,15 +22,22 @@ export function PaymentSuccessDialog({ booking, receipt, open, onGoToTickets }: 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.96, y: 16 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.96, y: 16 }}
         className="w-full max-w-md rounded-lg bg-white p-5 shadow-2xl dark:bg-slate-900"
+        onClick={(event) => event.stopPropagation()}
       >
-        <div className="grid h-14 w-14 place-items-center rounded-full bg-teal-50 text-[#14b8a6]">
-          <CheckCircle2 size={30} />
+        <div className="flex items-start justify-between gap-4">
+          <div className="grid h-14 w-14 place-items-center rounded-full bg-teal-50 text-[#14b8a6]">
+            <CheckCircle2 size={30} />
+          </div>
+          <Button type="button" variant="ghost" className="h-9 w-9 p-0" onClick={onClose} aria-label="Đóng">
+            <X size={18} />
+          </Button>
         </div>
         <h2 className="mt-4 text-2xl font-extrabold text-slate-950 dark:text-white">Thanh toán thành công</h2>
         <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -40,7 +48,7 @@ export function PaymentSuccessDialog({ booking, receipt, open, onGoToTickets }: 
           <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 p-3 text-sm text-slate-700">
             <p className="font-bold text-slate-950">Mã giao dịch: {receipt.transactionCode}</p>
             <p>Đã thanh toán: {receipt.paidAmount.toLocaleString('vi-VN')}đ</p>
-            <p>Email xác nhận: mock sent</p>
+            <p>Email xác nhận: đã gửi</p>
           </div>
         )}
 

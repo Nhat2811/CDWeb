@@ -121,19 +121,23 @@ export function TicketBookingCard({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!submitting) setConfirmOpen(false);
+            }}
           >
             <motion.div
               initial={{ scale: 0.96, y: 16 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.96, y: 16 }}
               className="w-full max-w-md rounded-lg bg-white p-5 shadow-2xl dark:bg-slate-900"
+              onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-950 dark:text-white">Xác nhận thanh toán</h3>
                   <p className="mt-1 text-sm text-slate-500">Kiểm tra thông tin trước khi tạo booking.</p>
                 </div>
-                <Button type="button" variant="ghost" className="h-9 w-9 p-0" onClick={() => setConfirmOpen(false)}>
+                <Button type="button" variant="ghost" className="h-9 w-9 p-0" onClick={() => setConfirmOpen(false)} disabled={submitting} aria-label="Đóng">
                   <X size={18} />
                 </Button>
               </div>
@@ -143,7 +147,7 @@ export function TicketBookingCard({
                 <div className="flex justify-between"><span>Tổng thanh toán</span><strong>{total.toLocaleString('vi-VN')}đ</strong></div>
               </div>
               <div className="mt-5 flex gap-3">
-                <Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmOpen(false)}>
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmOpen(false)} disabled={submitting}>
                   Hủy
                 </Button>
                 <Button

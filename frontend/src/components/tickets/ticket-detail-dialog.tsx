@@ -23,19 +23,21 @@ export function TicketDetailDialog({ booking, user, onClose }: TicketDetailDialo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
         >
           <motion.div
             initial={{ scale: 0.96, y: 18 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.96, y: 18 }}
             className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white shadow-2xl dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
           >
             <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
               <div>
                 <h2 className="text-2xl font-bold text-slate-950 dark:text-white">Chi tiết vé</h2>
                 <p className="mt-1 text-sm text-slate-500">Booking #{booking._id.slice(-8).toUpperCase()}</p>
               </div>
-              <Button type="button" variant="ghost" className="h-9 w-9 p-0" onClick={onClose}>
+              <Button type="button" variant="ghost" className="h-9 w-9 p-0" onClick={onClose} aria-label="Đóng">
                 <X size={18} />
               </Button>
             </div>

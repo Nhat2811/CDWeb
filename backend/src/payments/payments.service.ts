@@ -267,6 +267,7 @@ export class PaymentsService {
     const baseUrl = this.config.get<string>('VNPAY_PAYMENT_URL') ?? 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
     const now = new Date();
     const createDate = this.formatVnpayDate(now);
+    const expireDate = this.formatVnpayDate(new Date(now.getTime() + 15 * 60 * 1000));
     const params: Record<string, string> = {
       vnp_Version: '2.1.0',
       vnp_Command: 'pay',
@@ -274,15 +275,16 @@ export class PaymentsService {
       vnp_Amount: String(input.paidAmount * 100),
       vnp_CurrCode: 'VND',
       vnp_TxnRef: transactionCode,
-      vnp_OrderInfo: input.eventTitle,
+      vnp_OrderInfo: `Thanh toan don hang ${transactionCode}`,
       vnp_OrderType: 'other',
       vnp_Locale: 'vn',
       vnp_ReturnUrl: `${this.backendUrl}/payments/vnpay/return`,
       vnp_IpAddr: '127.0.0.1',
       vnp_CreateDate: createDate,
+      vnp_ExpireDate: expireDate,
     };
     const signed = this.signVnpayParams(params, secret);
-    return `${baseUrl}?${new URLSearchParams(signed).toString()}`;
+    return `${baseUrl}?${this.stringifyVnpayParams(signed)}`;
   }
 
   private async createMomoCheckout(
@@ -405,7 +407,7 @@ export class PaymentsService {
       paidAmount: input.paidAmount,
       message: input.message,
       paidAt: input.paidAt,
-      transactionCode: `PAY-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+      transactionCode: `PAY${Date.now()}${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
     });
   }
 
@@ -425,17 +427,31 @@ export class PaymentsService {
   }
 
   private signVnpayParams(params: Record<string, string>, secret: string) {
-    const sorted = Object.keys(params)
+    const sorted = this.sortVnpayParams(params);
+    const signData = this.stringifyVnpayParams(sorted);
+    return {
+      ...sorted,
+      vnp_SecureHash: createHmac('sha512', secret).update(Buffer.from(signData, 'utf-8')).digest('hex'),
+    };
+  }
+
+  private sortVnpayParams(params: Record<string, string>) {
+    return Object.keys(params)
       .sort()
       .reduce<Record<string, string>>((result, key) => {
         result[key] = params[key];
         return result;
       }, {});
-    const signData = new URLSearchParams(sorted).toString();
-    return {
-      ...sorted,
-      vnp_SecureHash: createHmac('sha512', secret).update(Buffer.from(signData, 'utf-8')).digest('hex'),
-    };
+  }
+
+  private stringifyVnpayParams(params: Record<string, string>) {
+    return Object.entries(params)
+      .map(([key, value]) => `${this.vnpayEncode(key)}=${this.vnpayEncode(value)}`)
+      .join('&');
+  }
+
+  private vnpayEncode(value: string) {
+    return encodeURIComponent(value).replace(/%20/g, '+');
   }
 
   private verifyVnpaySignature(query: Record<string, string>) {

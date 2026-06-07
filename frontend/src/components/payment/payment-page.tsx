@@ -344,6 +344,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
             booking={booking}
             receipt={receipt}
             open={successOpen}
+            onClose={() => setSuccessOpen(false)}
             onGoToTickets={() => router.push('/my-tickets')}
           />
         )}
