@@ -33,4 +33,12 @@ export class QueryEventsDto {
   @IsOptional()
   @IsNumberString()
   maxPrice?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  page?: string;
+
+  @IsOptional()
+  @IsNumberString()
+  limit?: string;
 }

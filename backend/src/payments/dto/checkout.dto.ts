@@ -6,12 +6,12 @@ export class CheckoutDto {
   bookingId: string;
 
   @IsOptional()
-  @IsIn(['card', 'bank_transfer', 'e_wallet'])
-  method?: 'card' | 'bank_transfer' | 'e_wallet';
+  @IsIn(['card', 'bank_transfer', 'e_wallet', 'cod'])
+  method?: 'card' | 'bank_transfer' | 'e_wallet' | 'cod';
 
   @IsOptional()
-  @IsIn(['mock', 'stripe', 'vnpay', 'momo'])
-  provider?: 'mock' | 'stripe' | 'vnpay' | 'momo';
+  @IsIn(['mock', 'stripe', 'vnpay', 'momo', 'manual'])
+  provider?: 'mock' | 'stripe' | 'vnpay' | 'momo' | 'manual';
 
   @IsOptional()
   @IsBoolean()

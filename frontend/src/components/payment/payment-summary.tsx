@@ -30,11 +30,11 @@ function getBookerEmail(user: Booking['user'], fallback: User | null) {
 export function PaymentSummary({ booking, user, discountCode, previewDiscountAmount = 0, status }: PaymentSummaryProps) {
   const event = booking.event;
   const ticket = booking.ticket;
-  const unitPrice = ticket?.price ?? Math.round(booking.totalPrice / Math.max(booking.quantity, 1));
+  const unitPrice = (typeof ticket === 'object' && ticket ? ticket.price : undefined) ?? Math.round(booking.totalPrice / Math.max(booking.quantity, 1));
   const originalAmount = unitPrice * booking.quantity;
   const discountAmount = booking.discountAmount ?? previewDiscountAmount;
   const payableAmount = booking.status === 'pending' ? Math.max(originalAmount - discountAmount, 0) : booking.totalPrice;
-  const normalizedDiscount = booking.discountCode || discountCode?.trim().toUpperCase() || 'Không áp dụng';
+  const normalizedDiscount = booking.discountCode || discountCode?.trim()?.toUpperCase() || 'Không áp dụng';
 
   return (
     <Card className="overflow-hidden">
@@ -53,7 +53,7 @@ export function PaymentSummary({ booking, user, discountCode, previewDiscountAmo
       <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
-            <InfoItem icon={Ticket} label="Loại vé" value={ticket?.name ?? 'Vé'} />
+            <InfoItem icon={Ticket} label="Loại vé" value={(typeof ticket === 'object' && ticket ? ticket.name : undefined) ?? 'Vé'} />
             <InfoItem label="Số lượng" value={`${booking.quantity} vé`} />
             <InfoItem label="Giá vé" value={formatCurrency(unitPrice)} />
             <InfoItem icon={Percent} label="Mã giảm giá" value={normalizedDiscount} />

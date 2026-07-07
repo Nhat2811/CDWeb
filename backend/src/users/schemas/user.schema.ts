@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
-export type UserRole = 'admin' | 'customer';
+export type UserRole = 'admin' | 'staff' | 'customer';
 
 @Schema({ timestamps: true })
 export class User {
@@ -27,8 +27,20 @@ export class User {
   @Prop({ default: '' })
   bio: string;
 
-  @Prop({ enum: ['admin', 'customer'], default: 'customer' })
+  @Prop({ enum: ['admin', 'staff', 'customer'], default: 'customer' })
   role: UserRole;
+
+  @Prop({ default: false })
+  isEmailVerified: boolean;
+
+  @Prop({ type: String, default: null })
+  verificationToken: string | null;
+
+  @Prop({ type: String, default: null })
+  resetPasswordToken: string | null;
+
+  @Prop({ type: Date, default: null })
+  resetPasswordExpires: Date | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

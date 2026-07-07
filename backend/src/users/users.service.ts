@@ -10,6 +10,7 @@ type CreateUserInput = {
   name: string;
   email: string;
   password: string;
+  verificationToken?: string;
 };
 
 @Injectable()
@@ -24,6 +25,17 @@ export class UsersService {
 
   findByEmail(email: string) {
     return this.userModel.findOne({ email }).exec();
+  }
+
+  findByVerificationToken(token: string) {
+    return this.userModel.findOne({ verificationToken: token }).exec();
+  }
+
+  findByResetToken(token: string) {
+    return this.userModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+    }).exec();
   }
 
   async findById(id: string) {

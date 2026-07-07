@@ -29,6 +29,21 @@ export class Event {
 
   @Prop({ enum: ['draft', 'published', 'cancelled'], default: 'draft', index: true })
   status: EventStatus;
+
+  @Prop({ type: Object })
+  seatLayout?: {
+    rows: number;
+    cols: number;
+  };
+
+  @Prop({ type: [String], default: [] })
+  bookedSeats: string[];
+
+  @Prop({ default: 0 })
+  averageRating: number;
+
+  @Prop({ default: 0 })
+  totalReviews: number;
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event);

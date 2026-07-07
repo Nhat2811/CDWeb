@@ -1,5 +1,5 @@
 import { api } from './api';
-import { ApiResponse, Event, Ticket } from '@/types';
+import { ApiResponse, Event, PaginatedData, Ticket } from '@/types';
 
 export type EventQuery = {
   search?: string;
@@ -10,10 +10,12 @@ export type EventQuery = {
   dateTo?: string;
   minPrice?: string;
   maxPrice?: string;
+  page?: string;
+  limit?: string;
 };
 
 export async function getEvents(params?: EventQuery) {
-  const { data } = await api.get<ApiResponse<Event[]>>('/events', { params });
+  const { data } = await api.get<ApiResponse<PaginatedData<Event>>>('/events', { params });
   return data.data;
 }
 

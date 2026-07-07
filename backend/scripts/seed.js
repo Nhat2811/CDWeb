@@ -70,45 +70,45 @@ const images = [
 ];
 
 const events = [
-  ['Vietnam Music Night 2026', 'Dem nhac live voi nhieu nghe si tre, san khau anh sang hien dai va khu check-in ngoai troi.', 'Am nhac', 'TP. Ho Chi Minh'],
-  ['EDM Beach Festival', 'Le hoi EDM ngoai troi ven bien voi DJ quoc te, hieu ung visual va food zone.', 'Am nhac', 'Nha Trang'],
-  ['Acoustic Rooftop Session', 'Dem acoustic than mat tren san thuong voi indie band va khong gian chill cuoi tuan.', 'Am nhac', 'Da Lat'],
-  ['K-Pop Dance Concert', 'Dem nhac va dance cover K-Pop voi fan meeting, photobooth va lightstick zone.', 'Am nhac', 'Ha Noi'],
+  ['Vietnam Music Night 2026', 'Đêm nhạc live với nhiều nghệ sĩ trẻ, sân khấu ánh sáng hiện đại và khu check-in ngoài trời.', 'Am nhac', 'TP. Hồ Chí Minh'],
+  ['EDM Beach Festival', 'Lễ hội EDM ngoài trời ven biển với DJ quốc tế, hiệu ứng visual và food zone.', 'Am nhac', 'Nha Trang'],
+  ['Acoustic Rooftop Session', 'Đêm acoustic thân mật trên sân thượng với indie band và không gian chill cuối tuần.', 'Am nhac', 'Đà Lạt'],
+  ['K-Pop Dance Concert', 'Đêm nhạc và dance cover K-Pop với fan meeting, photobooth và lightstick zone.', 'Am nhac', 'Hà Nội'],
 
-  ['Tech Summit Saigon', 'Hoi nghi cong nghe ve AI, cloud, bao mat va san pham so danh cho developer va startup.', 'Cong nghe', 'TP. Ho Chi Minh'],
-  ['AI Product Day', 'Su kien gioi thieu san pham AI, prompt engineering, automation va ung dung AI trong doanh nghiep.', 'Cong nghe', 'Ha Noi'],
-  ['Cloud Native Meetup', 'Workshop ve Kubernetes, observability, CI/CD va kien truc microservices.', 'Cong nghe', 'Da Nang'],
-  ['Cyber Security Lab', 'Buoi thuc hanh bao mat ung dung web, pentest co ban va xu ly su co.', 'Cong nghe', 'TP. Ho Chi Minh'],
+  ['Tech Summit Saigon', 'Hội nghị công nghệ về AI, cloud, bảo mật và sản phẩm số dành cho developer và startup.', 'Cong nghe', 'TP. Hồ Chí Minh'],
+  ['AI Product Day', 'Sự kiện giới thiệu sản phẩm AI, prompt engineering, automation và ứng dụng AI trong doanh nghiệp.', 'Cong nghe', 'Hà Nội'],
+  ['Cloud Native Meetup', 'Workshop về Kubernetes, observability, CI/CD và kiến trúc microservices.', 'Cong nghe', 'Đà Nẵng'],
+  ['Cyber Security Lab', 'Buổi thực hành bảo mật ứng dụng web, pentest cơ bản và xử lý sự cố.', 'Cong nghe', 'TP. Hồ Chí Minh'],
 
-  ['Business Growth Forum', 'Dien dan tang truong kinh doanh, van hanh, marketing va goi von cho doanh nghiep vua va nho.', 'Kinh doanh', 'Ha Noi'],
-  ['Startup Pitch Day', 'Ngay goi von cho startup giai doan seed, co mentor, nha dau tu va gian trung bay san pham.', 'Kinh doanh', 'TP. Ho Chi Minh'],
-  ['E-commerce Masterclass', 'Chuong trinh chia se chien luoc ban hang da kenh, van hanh kho va toi uu chuyen doi.', 'Kinh doanh', 'Can Tho'],
-  ['Sales Leadership Forum', 'Hoi thao quan tri doi ngu sales, CRM, pipeline va du bao doanh thu.', 'Kinh doanh', 'Da Nang'],
+  ['Business Growth Forum', 'Diễn đàn tăng trưởng kinh doanh, vận hành, marketing và gọi vốn cho doanh nghiệp vừa và nhỏ.', 'Kinh doanh', 'Hà Nội'],
+  ['Startup Pitch Day', 'Ngày gọi vốn cho startup giai đoạn seed, có mentor, nhà đầu tư và gian trưng bày sản phẩm.', 'Kinh doanh', 'TP. Hồ Chí Minh'],
+  ['E-commerce Masterclass', 'Chương trình chia sẻ chiến lược bán hàng đa kênh, vận hành kho và tối ưu chuyển đổi.', 'Kinh doanh', 'Cần Thơ'],
+  ['Sales Leadership Forum', 'Hội thảo quản trị đội ngũ sales, CRM, pipeline và dự báo doanh thu.', 'Kinh doanh', 'Đà Nẵng'],
 
-  ['Coffee Workshop Pro', 'Workshop rang xay, cupping, latte art va van hanh quan ca phe.', 'Workshop', 'Da Lat'],
-  ['Photography Walk', 'Workshop chup anh duong pho, bo cuc anh va hau ky Lightroom cho nguoi moi.', 'Workshop', 'Hoi An'],
-  ['UX Writing Bootcamp', 'Lop thuc hanh viet microcopy, thong bao loi va content cho san pham so.', 'Workshop', 'TP. Ho Chi Minh'],
-  ['Handmade Candle Class', 'Buoi lam nen thom thu cong, phoi mui va dong goi san pham.', 'Workshop', 'Ha Noi'],
+  ['Coffee Workshop Pro', 'Workshop rang xay, cupping, latte art và vận hành quán cà phê.', 'Workshop', 'Đà Lạt'],
+  ['Photography Walk', 'Workshop chụp ảnh đường phố, bố cục ảnh và hậu kỳ Lightroom cho người mới.', 'Workshop', 'Hội An'],
+  ['UX Writing Bootcamp', 'Lớp thực hành viết microcopy, thông báo lỗi và content cho sản phẩm số.', 'Workshop', 'TP. Hồ Chí Minh'],
+  ['Handmade Candle Class', 'Buổi làm nến thơm thủ công, phối mùi và đóng gói sản phẩm.', 'Workshop', 'Hà Nội'],
 
-  ['Food & Culture Weekend', 'Khong gian am thuc, workshop van hoa va bieu dien acoustic cuoi tuan.', 'Am thuc', 'Da Nang'],
-  ['Saigon Street Food Tour', 'Ngay hoi am thuc duong pho voi cac gian hang dia phuong va minigame trai nghiem.', 'Am thuc', 'TP. Ho Chi Minh'],
-  ['Vietnamese Cuisine Fair', 'Le hoi mon Viet ba mien, khu bep mo va lop nau an gia dinh.', 'Am thuc', 'Hue'],
-  ['Craft Beer Weekend', 'Su kien thu bia thu cong, food pairing va giao luu voi brewer.', 'Am thuc', 'Ha Noi'],
+  ['Food & Culture Weekend', 'Không gian ẩm thực, workshop văn hóa và biểu diễn acoustic cuối tuần.', 'Am thuc', 'Đà Nẵng'],
+  ['Saigon Street Food Tour', 'Ngày hội ẩm thực đường phố với các gian hàng địa phương và minigame trải nghiệm.', 'Am thuc', 'TP. Hồ Chí Minh'],
+  ['Vietnamese Cuisine Fair', 'Lễ hội món Việt ba miền, khu bếp mở và lớp nấu ăn gia đình.', 'Am thuc', 'Huế'],
+  ['Craft Beer Weekend', 'Sự kiện thử bia thủ công, food pairing và giao lưu với brewer.', 'Am thuc', 'Hà Nội'],
 
-  ['Marathon City Run', 'Giai chay thanh pho voi cu ly 5K, 10K, 21K va khu phuc hoi sau duong chay.', 'The thao', 'Da Nang'],
-  ['Yoga Sunrise Camp', 'Buoi yoga binh minh, sound healing va khu healthy brunch.', 'The thao', 'Nha Trang'],
-  ['Basketball 3x3 Cup', 'Giai bong ro 3x3 cho cong dong tre, co khu fan zone va trao giai.', 'The thao', 'TP. Ho Chi Minh'],
-  ['Cycling Weekend Challenge', 'Thu thach dap xe cuoi tuan, tram tiep nuoc va khu check-in finisher.', 'The thao', 'Da Lat'],
+  ['Marathon City Run', 'Giải chạy thành phố với cự ly 5K, 10K, 21K và khu phục hồi sau đường chạy.', 'The thao', 'Đà Nẵng'],
+  ['Yoga Sunrise Camp', 'Buổi yoga bình minh, sound healing và khu healthy brunch.', 'The thao', 'Nha Trang'],
+  ['Basketball 3x3 Cup', 'Giải bóng rổ 3x3 cho cộng đồng trẻ, có khu fan zone và trao giải.', 'The thao', 'TP. Hồ Chí Minh'],
+  ['Cycling Weekend Challenge', 'Thử thách đạp xe cuối tuần, trạm tiếp nước và khu check-in finisher.', 'The thao', 'Đà Lạt'],
 
-  ['Art Expo Contemporary', 'Trien lam nghe thuat duong dai voi tranh, sap dat va trinh dien da phuong tien.', 'Nghe thuat', 'Hue'],
-  ['Indie Film Screening', 'Chuong trinh chieu phim doc lap kem phan giao luu voi dao dien va ekip san xuat.', 'Nghe thuat', 'Ha Noi'],
-  ['Design Conference', 'Su kien danh cho UI/UX, branding, motion design va design system.', 'Nghe thuat', 'TP. Ho Chi Minh'],
-  ['Theatre Night', 'Dem kich san khau nho voi phan giao luu dao dien va dien vien.', 'Nghe thuat', 'Da Nang'],
+  ['Art Expo Contemporary', 'Triển lãm nghệ thuật đương đại với tranh, sắp đặt và trình diễn đa phương tiện.', 'Nghe thuat', 'Huế'],
+  ['Indie Film Screening', 'Chương trình chiếu phim độc lập kèm phần giao lưu với đạo diễn và ekip sản xuất.', 'Nghe thuat', 'Hà Nội'],
+  ['Design Conference', 'Sự kiện dành cho UI/UX, branding, motion design và design system.', 'Nghe thuat', 'TP. Hồ Chí Minh'],
+  ['Theatre Night', 'Đêm kịch sân khấu nhỏ với phần giao lưu đạo diễn và diễn viên.', 'Nghe thuat', 'Đà Nẵng'],
 
-  ['Book Fair Spring', 'Hoi sach mua xuan, ky tang tac gia, toa dam xuat ban va khu sach thieu nhi.', 'Giao duc', 'Can Tho'],
-  ['English Speaking Day', 'Ngay hoi luyen noi tieng Anh voi mentor, mini debate va networking.', 'Giao duc', 'TP. Ho Chi Minh'],
-  ['Career Orientation Expo', 'Ngay hoi dinh huong nghe nghiep, CV clinic va phong van thu.', 'Giao duc', 'Ha Noi'],
-  ['Personal Finance Class', 'Lop quan ly tai chinh ca nhan, tiet kiem, dau tu co ban va ngan sach gia dinh.', 'Giao duc', 'Da Nang'],
+  ['Book Fair Spring', 'Hội sách mùa xuân, ký tặng tác giả, tọa đàm xuất bản và khu sách thiếu nhi.', 'Giao duc', 'Cần Thơ'],
+  ['English Speaking Day', 'Ngày hội luyện nói tiếng Anh với mentor, mini debate và networking.', 'Giao duc', 'TP. Hồ Chí Minh'],
+  ['Career Orientation Expo', 'Ngày hội định hướng nghề nghiệp, CV clinic và phỏng vấn thử.', 'Giao duc', 'Hà Nội'],
+  ['Personal Finance Class', 'Lớp quản lý tài chính cá nhân, tiết kiệm, đầu tư cơ bản và ngân sách gia đình.', 'Giao duc', 'Đà Nẵng'],
 ];
 
 const extraEventsByCategory = {
@@ -211,22 +211,33 @@ const extraEventsByCategory = {
 };
 
 const categoryLocations = {
-  'Am nhac': ['TP. Ho Chi Minh', 'Ha Noi', 'Da Nang', 'Nha Trang', 'Da Lat'],
-  'Cong nghe': ['TP. Ho Chi Minh', 'Ha Noi', 'Da Nang', 'Can Tho'],
-  'Kinh doanh': ['Ha Noi', 'TP. Ho Chi Minh', 'Da Nang', 'Can Tho'],
-  Workshop: ['Da Lat', 'Hoi An', 'TP. Ho Chi Minh', 'Ha Noi'],
-  'Am thuc': ['Da Nang', 'Hue', 'TP. Ho Chi Minh', 'Ha Noi', 'Can Tho'],
-  'The thao': ['Da Nang', 'Nha Trang', 'Da Lat', 'TP. Ho Chi Minh'],
-  'Nghe thuat': ['Hue', 'Ha Noi', 'TP. Ho Chi Minh', 'Da Nang'],
-  'Giao duc': ['Ha Noi', 'TP. Ho Chi Minh', 'Da Nang', 'Can Tho'],
+  'Am nhac': ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Nha Trang', 'Đà Lạt'],
+  'Cong nghe': ['TP. Hồ Chí Minh', 'Hà Nội', 'Đà Nẵng', 'Cần Thơ'],
+  'Kinh doanh': ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Cần Thơ'],
+  Workshop: ['Đà Lạt', 'Hội An', 'TP. Hồ Chí Minh', 'Hà Nội'],
+  'Am thuc': ['Đà Nẵng', 'Huế', 'TP. Hồ Chí Minh', 'Hà Nội', 'Cần Thơ'],
+  'The thao': ['Đà Nẵng', 'Nha Trang', 'Đà Lạt', 'TP. Hồ Chí Minh'],
+  'Nghe thuat': ['Huế', 'Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng'],
+  'Giao duc': ['Hà Nội', 'TP. Hồ Chí Minh', 'Đà Nẵng', 'Cần Thơ'],
+};
+
+const categoryNameMap = {
+  'Am nhac': 'âm nhạc',
+  'Cong nghe': 'công nghệ',
+  'Kinh doanh': 'kinh doanh',
+  'The thao': 'thể thao',
+  'Nghe thuat': 'nghệ thuật',
+  'Giao duc': 'giáo dục',
+  'Am thuc': 'ẩm thực',
+  'Workshop': 'workshop',
 };
 
 for (const [category, titles] of Object.entries(extraEventsByCategory)) {
-  const locations = categoryLocations[category] || ['TP. Ho Chi Minh'];
+  const locations = categoryLocations[category] || ['TP. Hồ Chí Minh'];
   titles.forEach((title, index) => {
     events.push([
       `${title} 2026`,
-      `Su kien ${category.toLowerCase()} mo rong so ${index + 1}, co khu trai nghiem, networking va check-in QR cho khach tham du.`,
+      `Sự kiện ${categoryNameMap[category] || category.toLowerCase()} mở rộng số ${index + 1}, có khu trải nghiệm, networking và check-in QR cho khách tham dự.`,
       category,
       locations[index % locations.length],
     ]);

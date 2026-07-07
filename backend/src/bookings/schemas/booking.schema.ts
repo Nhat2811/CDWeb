@@ -21,6 +21,9 @@ export class Booking {
   @Prop({ required: true, min: 1 })
   quantity: number;
 
+  @Prop({ type: [String], default: [] })
+  seats: string[];
+
   @Prop({ required: true, min: 0 })
   totalPrice: number;
 

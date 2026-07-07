@@ -10,6 +10,7 @@ import { TicketBookingCard } from '@/components/event/ticket-booking-card';
 import { getErrorMessage } from '@/services/api';
 import { createBooking } from '@/services/bookings.service';
 import { getEvent, getTickets } from '@/services/events.service';
+import { getEventReviews, Review } from '@/services/reviews.service';
 import { useAuth } from '@/store/auth-store';
 import { Event, Ticket } from '@/types';
 
@@ -24,6 +25,7 @@ export default function EventDetailPage() {
   const { user } = useAuth();
   const [event, setEvent] = useState<Event | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [ticketId, setTicketId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -36,9 +38,10 @@ export default function EventDetailPage() {
       setLoading(true);
       setError('');
       try {
-        const [eventData, ticketData] = await Promise.all([getEvent(id), getTickets(id)]);
+        const [eventData, ticketData, reviewsData] = await Promise.all([getEvent(id), getTickets(id), getEventReviews(id)]);
         setEvent(eventData);
         setTickets(ticketData);
+        setReviews(reviewsData);
         const firstAvailable = ticketData.find((ticket) => ticket.quantity - ticket.sold > 0) ?? ticketData[0];
         setTicketId(firstAvailable?._id ?? '');
       } catch (err) {
@@ -69,7 +72,7 @@ export default function EventDetailPage() {
     window.setTimeout(() => setToast(null), 3200);
   }
 
-  async function submitBooking(discountCode?: string) {
+  async function submitBooking(discountCode?: string, seats?: string[]) {
     if (!user) {
       showToast('error', 'Vui lòng đăng nhập để đặt vé.');
       router.push('/login');
@@ -83,7 +86,7 @@ export default function EventDetailPage() {
     setSubmitting(true);
     setError('');
     try {
-      const booking = await createBooking(id, selectedTicket._id, quantity);
+      const booking = await createBooking(id, selectedTicket._id, quantity, seats);
       showToast('success', 'Đã tạo booking. Đang chuyển sang thanh toán...');
       const query = discountCode?.trim() ? `?discountCode=${encodeURIComponent(discountCode.trim())}` : '';
       window.setTimeout(() => router.push(`/payments/${booking._id}${query}`), 500);
@@ -109,8 +112,9 @@ export default function EventDetailPage() {
   return (
     <>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-        <EventDetailSection event={event} tickets={tickets} />
+        <EventDetailSection event={event} tickets={tickets} reviews={reviews} />
         <TicketBookingCard
+          event={event}
           tickets={tickets}
           selectedTicketId={ticketId}
           quantity={quantity}

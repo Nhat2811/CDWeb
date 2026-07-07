@@ -1,4 +1,4 @@
-import { IsMongoId, IsNumber, Min } from 'class-validator';
+import { IsArray, IsMongoId, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateBookingDto {
   @IsMongoId()
@@ -10,4 +10,9 @@ export class CreateBookingDto {
   @IsNumber()
   @Min(1)
   quantity: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  seats?: string[];
 }

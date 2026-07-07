@@ -2,9 +2,9 @@
 
 import clsx from 'clsx';
 import { CreditCard, Landmark, WalletCards } from 'lucide-react';
-import { PaymentGatewayConfig, PaymentProvider } from '@/types';
+import { PaymentCheckoutMethod, PaymentGatewayConfig, PaymentProvider } from '@/types';
 
-export type PaymentMethodValue = 'vnpay' | 'momo';
+export type PaymentMethodValue = 'vnpay' | 'cod' | 'transfer';
 
 const methods: Array<{
   value: PaymentMethodValue;
@@ -12,6 +12,7 @@ const methods: Array<{
   description: string;
   Icon: typeof CreditCard;
   provider: PaymentProvider;
+  method?: PaymentCheckoutMethod;
 }> = [
   {
     value: 'vnpay',
@@ -21,11 +22,20 @@ const methods: Array<{
     provider: 'vnpay',
   },
   {
-    value: 'momo',
-    title: 'MoMo',
-    description: 'Thanh toan bang vi MoMo.',
+    value: 'transfer',
+    title: 'Chuyển khoản ngân hàng',
+    description: 'Chuyển khoản thủ công và chờ Admin xác nhận.',
+    Icon: Landmark,
+    provider: 'manual',
+    method: 'bank_transfer',
+  },
+  {
+    value: 'cod',
+    title: 'Thanh toán khi nhận vé (COD)',
+    description: 'Thanh toán bằng tiền mặt tại sự kiện.',
     Icon: WalletCards,
-    provider: 'momo',
+    provider: 'manual',
+    method: 'cod',
   },
 ];
 

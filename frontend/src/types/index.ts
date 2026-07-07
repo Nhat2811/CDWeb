@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'customer';
+export type UserRole = 'admin' | 'staff' | 'customer';
 
 export type User = {
   id: string;
@@ -18,6 +18,18 @@ export type ApiResponse<T> = {
   data: T;
 };
 
+export type PaginatedMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type PaginatedData<T> = {
+  items: T[];
+  meta: PaginatedMeta;
+};
+
 export type EventStatus = 'draft' | 'published' | 'cancelled';
 
 export type Event = {
@@ -30,9 +42,13 @@ export type Event = {
   endDate: string;
   category: string;
   status: EventStatus;
+  seatLayout?: { rows: number; cols: number };
+  bookedSeats?: string[];
   minTicketPrice?: number;
   maxTicketPrice?: number;
   availableTickets?: number;
+  averageRating?: number;
+  totalReviews?: number;
 };
 
 export type TicketName = 'VIP' | 'VVIP' | 'Standard' | 'Early Bird';
@@ -50,8 +66,9 @@ export type BookingStatus = 'pending' | 'paid' | 'cancelled' | 'used';
 
 export type PaymentStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'cancelled';
 
-export type PaymentCheckoutMethod = 'card' | 'bank_transfer' | 'e_wallet';
-export type PaymentProvider = 'mock' | 'stripe' | 'vnpay' | 'momo';
+export type PaymentCheckoutMethod = 'card' | 'bank_transfer' | 'e_wallet' | 'cod';
+export type PaymentProvider = 'mock' | 'stripe' | 'vnpay' | 'momo' | 'manual';
+export type PaymentTransactionStatus = 'pending' | 'success' | 'failed';
 
 export type PaymentProviderConfig = {
   enabled: boolean;
@@ -65,8 +82,9 @@ export type Booking = {
   _id: string;
   user: User | string;
   event: Event;
-  ticket: Ticket;
+  ticket: Ticket | string;
   quantity: number;
+  seats?: string[];
   totalPrice: number;
   discountAmount?: number;
   discountCode?: string;

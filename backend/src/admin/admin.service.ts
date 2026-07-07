@@ -3,6 +3,7 @@ import { BookingsService } from '../bookings/bookings.service';
 import { EventsService } from '../events/events.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { UsersService } from '../users/users.service';
+import { PaymentsService } from '../payments/payments.service';
 import { BookingStatus } from '../bookings/schemas/booking.schema';
 import { UserRole } from '../users/schemas/user.schema';
 
@@ -13,6 +14,7 @@ export class AdminService {
     private readonly ticketsService: TicketsService,
     private readonly bookingsService: BookingsService,
     private readonly usersService: UsersService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   async dashboard() {
@@ -26,8 +28,16 @@ export class AdminService {
     return { totalEvents, totalTicketsSold, totalRevenue, totalUsers: users.length, recentBookings };
   }
 
+  async dashboardCharts() {
+    return this.bookingsService.getChartData();
+  }
+
   bookings() {
     return this.bookingsService.findAll();
+  }
+
+  confirmPayment(id: string) {
+    return this.paymentsService.confirmManualPayment(id);
   }
 
   updateBookingStatus(id: string, status: BookingStatus) {

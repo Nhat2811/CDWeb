@@ -8,10 +8,12 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { QuantitySelector } from './quantity-selector';
 import { PaymentSummary, calculateDiscount } from './payment-summary';
+import { SeatMap } from './seat-map';
 import { TicketTypeSelect, getTicketBenefits } from './ticket-type-select';
-import { Ticket } from '@/types';
+import { Event, Ticket } from '@/types';
 
 type TicketBookingCardProps = {
+  event: Event;
   tickets: Ticket[];
   selectedTicketId: string;
   quantity: number;
@@ -19,10 +21,11 @@ type TicketBookingCardProps = {
   error?: string;
   onTicketChange: (ticketId: string) => void;
   onQuantityChange: (quantity: number) => void;
-  onSubmit: (discountCode?: string) => Promise<void>;
+  onSubmit: (discountCode?: string, seats?: string[]) => Promise<void>;
 };
 
 export function TicketBookingCard({
+  event,
   tickets,
   selectedTicketId,
   quantity,
@@ -34,6 +37,8 @@ export function TicketBookingCard({
 }: TicketBookingCardProps) {
   const [discountCode, setDiscountCode] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket._id === selectedTicketId),
     [selectedTicketId, tickets],
@@ -47,9 +52,13 @@ export function TicketBookingCard({
     soldRatio >= 0.8 || remaining <= 10 ? { label: 'Sắp hết vé', tone: 'amber' as const } :
     { label: 'Còn vé', tone: 'teal' as const };
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  function handleSubmit(eventForm: FormEvent) {
+    eventForm.preventDefault();
     if (!selectedTicket || remaining === 0) return;
+    if (event.seatLayout && selectedSeats.length !== quantity) {
+      alert(`Vui lòng chọn đúng ${quantity} ghế trên sơ đồ.`);
+      return;
+    }
     setConfirmOpen(true);
   }
 
@@ -96,6 +105,23 @@ export function TicketBookingCard({
               </div>
               <QuantitySelector value={quantity} max={remaining} disabled={!selectedTicket || remaining === 0} onChange={onQuantityChange} />
             </div>
+
+            {event.seatLayout && (
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="font-semibold text-slate-950 dark:text-white">Chọn ghế ngồi</p>
+                  <span className="text-sm text-slate-500">Đã chọn: {selectedSeats.length}/{quantity}</span>
+                </div>
+                <SeatMap
+                  rows={event.seatLayout.rows}
+                  cols={event.seatLayout.cols}
+                  bookedSeats={event.bookedSeats || []}
+                  selectedSeats={selectedSeats}
+                  maxSelectable={quantity}
+                  onSeatSelect={setSelectedSeats}
+                />
+              </div>
+            )}
 
             <PaymentSummary
               price={selectedTicket?.price ?? 0}
@@ -156,7 +182,7 @@ export function TicketBookingCard({
                   disabled={submitting}
                   onClick={async () => {
                     setConfirmOpen(false);
-                    await onSubmit(discountCode);
+                    await onSubmit(discountCode, event.seatLayout ? selectedSeats : undefined);
                   }}
                 >
                   <TicketCheck size={18} />

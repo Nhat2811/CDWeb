@@ -44,8 +44,15 @@ export class BookingsController {
 
   @Patch(':id/check-in')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles('admin', 'staff')
   checkIn(@Param('id') id: string) {
     return this.bookingsService.checkIn(id);
+  }
+
+  @Post('check-in-qr')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'staff')
+  checkInQr(@Body() payload: { user: string; event: string; ticket: string }) {
+    return this.bookingsService.checkInByPayload(payload);
   }
 }

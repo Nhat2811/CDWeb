@@ -5,7 +5,9 @@ import { createHmac } from 'crypto';
 import { Model, Types } from 'mongoose';
 import Stripe from 'stripe';
 import { BookingsService } from '../bookings/bookings.service';
+import { CouponsService } from '../coupons/coupons.service';
 import { JwtUser } from '../common/types/jwt-user.type';
+import { MailService } from '../mail/mail.service';
 import { CheckoutDto } from './dto/checkout.dto';
 import { Payment, PaymentMethod, PaymentProvider, PaymentTransactionStatus } from './schemas/payment.schema';
 
@@ -22,6 +24,8 @@ export class PaymentsService {
   constructor(
     private readonly bookingsService: BookingsService,
     private readonly config: ConfigService,
+    private readonly mailService: MailService,
+    private readonly couponsService: CouponsService,
     @InjectModel(Payment.name) private readonly paymentModel: Model<Payment>,
   ) {
     this.frontendUrl = this.config.get<string>('FRONTEND_URL')?.split(',')[0] ?? 'http://localhost:3000';
@@ -32,13 +36,13 @@ export class PaymentsService {
     const booking = await this.bookingsService.findOneForUser(dto.bookingId, user);
     const method = dto.method ?? 'card';
     const provider = dto.provider ?? 'mock';
-    const discount = this.calculateDiscount(booking.totalPrice, dto.discountCode);
+    const discount = await this.couponsService.validateAndUse(dto.discountCode || '', booking.totalPrice);
     const paidAmount = Math.max(booking.totalPrice - discount.amount, 0);
 
     if (booking.status === 'cancelled') throw new BadRequestException('Booking is cancelled');
     if (booking.status === 'paid' || booking.status === 'used') throw new BadRequestException('Booking is already paid');
 
-    if (provider !== 'mock') {
+    if (provider !== 'mock' && provider !== 'manual') {
       return this.createGatewayCheckout({
         provider,
         method,
@@ -49,6 +53,22 @@ export class PaymentsService {
         paidAmount,
         eventTitle: typeof booking.event === 'object' && 'title' in booking.event ? String(booking.event.title) : 'Event booking',
       });
+    }
+
+    if (provider === 'manual') {
+      const transaction = await this.createTransaction({
+        bookingId: dto.bookingId,
+        userId: user.sub,
+        method,
+        provider,
+        status: 'pending',
+        originalAmount: booking.totalPrice,
+        discountAmount: discount.amount,
+        discountCode: discount.code,
+        paidAmount,
+        message: method === 'cod' ? 'Chờ thanh toán khi nhận vé (COD)' : 'Chờ người dùng chuyển khoản',
+      });
+      return this.buildCheckoutResponse(booking, method, provider, transaction);
     }
 
     if (dto.simulateFailure) {
@@ -85,6 +105,14 @@ export class PaymentsService {
       message: 'Payment completed. Confirmation email queued.',
       paidAt: new Date(),
     });
+
+    if (paidBooking.user && typeof paidBooking.user === 'object' && 'email' in paidBooking.user) {
+      await this.mailService.sendTicketEmail(String(paidBooking.user.email), paidBooking);
+    }
+
+    if (transaction.discountCode) {
+      await this.couponsService.markAsUsed(transaction.discountCode);
+    }
 
     return this.buildCheckoutResponse(paidBooking, method, provider, transaction);
   }
@@ -342,7 +370,27 @@ export class PaymentsService {
     transaction.message = `${provider} payment completed`;
     transaction.paidAt = new Date();
     await transaction.save();
+
+    if (transaction.discountCode) {
+      await this.couponsService.markAsUsed(transaction.discountCode);
+    }
+
+    if (booking.user && typeof booking.user === 'object' && 'email' in booking.user) {
+      await this.mailService.sendTicketEmail(String(booking.user.email), booking);
+    }
+
     return { transaction, booking };
+  }
+
+  async confirmManualPayment(bookingId: string) {
+    const transaction = await this.paymentModel
+      .findOne({ booking: new Types.ObjectId(bookingId), provider: 'manual', status: 'pending' })
+      .sort({ createdAt: -1 })
+      .exec();
+
+    if (!transaction) throw new BadRequestException('No pending manual transaction found for this booking');
+
+    return this.completeTransaction(transaction.transactionCode, 'manual');
   }
 
   private async failTransaction(transactionCode: string, provider: PaymentProvider, message: string) {
@@ -373,14 +421,7 @@ export class PaymentsService {
     };
   }
 
-  private calculateDiscount(totalPrice: number, code?: string): CalculatedDiscount {
-    const normalized = code?.trim().toUpperCase();
-    if (!normalized) return { code: undefined, amount: 0 };
-    if (normalized === 'EVENT10') return { code: normalized, amount: Math.round(totalPrice * 0.1) };
-    if (normalized === 'VIP50') return { code: normalized, amount: Math.min(50000, totalPrice) };
-    if (normalized === 'STUDENT20') return { code: normalized, amount: Math.round(totalPrice * 0.2) };
-    throw new BadRequestException('Discount code is invalid');
-  }
+
 
   private createTransaction(input: {
     bookingId: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CalendarClock, CreditCard, Download, Eye, MapPin, RotateCcw, XCircle } from 'lucide-react';
+import { CalendarClock, CreditCard, Download, Eye, MapPin, RotateCcw, Star, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Booking, User } from '@/types';
@@ -18,9 +18,10 @@ type TicketCardProps = {
   onViewDetail: (booking: Booking) => void;
   onCancel: (booking: Booking) => void;
   onPay: (booking: Booking) => void;
+  onReview?: (booking: Booking) => void;
 };
 
-export function TicketCard({ booking, user, onViewDetail, onCancel, onPay }: TicketCardProps) {
+export function TicketCard({ booking, user, onViewDetail, onCancel, onPay, onReview }: TicketCardProps) {
   const event = booking.event;
   const canCancel = booking.status === 'pending';
   const canPay = booking.status === 'pending';
@@ -45,7 +46,7 @@ export function TicketCard({ booking, user, onViewDetail, onCancel, onPay }: Tic
           <div className="min-w-0 space-y-4">
             <div>
               <h2 className="line-clamp-2 text-2xl font-extrabold text-slate-950 dark:text-white">{event?.title}</h2>
-              <p className="mt-2 text-sm font-semibold text-[#14b8a6]">{booking.ticket?.name} · Booking #{booking._id.slice(-8).toUpperCase()}</p>
+              <p className="mt-2 text-sm font-semibold text-[#14b8a6]">{(typeof booking.ticket === 'object' && booking.ticket ? booking.ticket.name : undefined) ?? 'Vé'} · Booking #{booking._id.slice(-8).toUpperCase()}</p>
             </div>
 
             <div className="grid gap-3 text-sm text-slate-600 dark:text-slate-300">
@@ -78,6 +79,12 @@ export function TicketCard({ booking, user, onViewDetail, onCancel, onPay }: Tic
                 <Button type="button" variant="danger" onClick={() => onCancel(booking)}>
                   <XCircle size={16} />
                   Hủy vé
+                </Button>
+              )}
+              {booking.status === 'used' && onReview && (
+                <Button type="button" onClick={() => onReview(booking)} className="bg-amber-500 text-white hover:bg-amber-600">
+                  <Star size={16} />
+                  Đánh giá
                 </Button>
               )}
             </div>

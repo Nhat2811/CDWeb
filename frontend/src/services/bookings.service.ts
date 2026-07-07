@@ -1,8 +1,8 @@
 import { api } from './api';
 import { ApiResponse, Booking } from '@/types';
 
-export async function createBooking(event: string, ticket: string, quantity: number) {
-  const { data } = await api.post<ApiResponse<Booking>>('/bookings', { event, ticket, quantity });
+export async function createBooking(event: string, ticket: string, quantity: number, seats?: string[]) {
+  const { data } = await api.post<ApiResponse<Booking>>('/bookings', { event, ticket, quantity, seats });
   return data.data;
 }
 

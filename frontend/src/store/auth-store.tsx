@@ -7,8 +7,10 @@ import { User } from '@/types';
 type AuthContextValue = {
   user: User | null;
   ready: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  loginWithGoogle: (token: string) => Promise<User>;
+  loginWithFacebook: (accessToken: string) => Promise<User>;
+  register: (name: string, email: string, password: string) => Promise<User>;
   updateUser: (user: User) => void;
   logout: () => void;
 };
@@ -34,12 +36,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('accessToken', auth.accessToken);
         localStorage.setItem('user', JSON.stringify(auth.user));
         setUser(auth.user);
+        return auth.user;
+      },
+      loginWithGoogle: async (token) => {
+        const { loginWithGoogle: loginWithGoogleReq } = await import('@/services/auth.service');
+        const auth = await loginWithGoogleReq(token);
+        localStorage.setItem('accessToken', auth.accessToken);
+        localStorage.setItem('user', JSON.stringify(auth.user));
+        setUser(auth.user);
+        return auth.user;
+      },
+      loginWithFacebook: async (accessToken) => {
+        const { loginWithFacebook: loginWithFacebookReq } = await import('@/services/auth.service');
+        const auth = await loginWithFacebookReq(accessToken);
+        localStorage.setItem('accessToken', auth.accessToken);
+        localStorage.setItem('user', JSON.stringify(auth.user));
+        setUser(auth.user);
+        return auth.user;
       },
       register: async (name, email, password) => {
         const auth = await registerRequest(name, email, password);
         localStorage.setItem('accessToken', auth.accessToken);
         localStorage.setItem('user', JSON.stringify(auth.user));
         setUser(auth.user);
+        return auth.user;
       },
       updateUser: (nextUser) => {
         const normalized = { ...nextUser, id: nextUser.id ?? nextUser._id ?? '' };

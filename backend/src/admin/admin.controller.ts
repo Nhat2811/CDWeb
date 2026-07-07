@@ -17,12 +17,25 @@ export class AdminController {
     return this.adminService.dashboard();
   }
 
+  @Get('dashboard-charts')
+  dashboardCharts() {
+    return this.adminService.dashboardCharts();
+  }
+
   @Get('bookings')
+  @Roles('admin', 'staff')
   bookings() {
     return this.adminService.bookings();
   }
 
+  @Patch('bookings/:id/confirm-payment')
+  @Roles('admin', 'staff')
+  confirmPayment(@Param('id') id: string) {
+    return this.adminService.confirmPayment(id);
+  }
+
   @Patch('bookings/:id/status')
+  @Roles('admin', 'staff')
   updateBookingStatus(@Param('id') id: string, @Body() dto: UpdateBookingStatusDto) {
     return this.adminService.updateBookingStatus(id, dto.status);
   }

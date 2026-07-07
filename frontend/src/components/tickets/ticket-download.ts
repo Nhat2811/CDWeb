@@ -30,7 +30,7 @@ export function downloadTicket(booking: Booking, user: User | null) {
     <div class="row"><span>Booking ID</span><strong>${booking._id}</strong></div>
     <div class="row"><span>Người đặt</span><strong>${user?.name ?? 'Khách hàng'}</strong></div>
     <div class="row"><span>Email</span><strong>${user?.email ?? ''}</strong></div>
-    <div class="row"><span>Loại vé</span><strong>${booking.ticket?.name ?? ''}</strong></div>
+    <div class="row"><span>Loại vé</span><strong>${(typeof booking.ticket === 'object' && booking.ticket ? booking.ticket.name : undefined) ?? ''}</strong></div>
     <div class="row"><span>Số lượng</span><strong>${booking.quantity}</strong></div>
     <div class="row"><span>Trạng thái</span><strong>${booking.status}</strong></div>
     <p class="total">${booking.totalPrice.toLocaleString('vi-VN')}đ</p>

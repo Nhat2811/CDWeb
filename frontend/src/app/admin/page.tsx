@@ -1,6 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
+import 'react-quill-new/dist/quill.snow.css';
+
+import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import {
   BarChart3,
   CalendarPlus,
@@ -15,6 +21,8 @@ import {
   Trash2,
   Upload,
   Users,
+  Percent,
+  ScanLine,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -26,8 +34,11 @@ import {
   getAdminBookings,
   getAdminUsers,
   getDashboard,
+  getDashboardCharts,
   updateAdminBookingStatus,
+  confirmAdminBookingPayment,
   updateAdminUserRole,
+  checkInAdminBookingQr,
 } from '@/services/admin.service';
 import {
   deleteEvent,
@@ -40,8 +51,9 @@ import {
 } from '@/services/events.service';
 import { useProtected } from '@/hooks/use-protected';
 import { Booking, BookingStatus, Dashboard, Event, Ticket, TicketName, User, UserRole } from '@/types';
+import { Coupon, createCoupon, deleteCoupon, getCoupons } from '@/services/coupons.service';
 
-type AdminTab = 'overview' | 'events' | 'bookings' | 'users';
+type AdminTab = 'overview' | 'events' | 'bookings' | 'users' | 'coupons' | 'scanner';
 
 const emptyEvent: Partial<Event> = {
   title: '',
@@ -59,15 +71,100 @@ const tabs: Array<{ id: AdminTab; label: string; icon: React.ElementType }> = [
   { id: 'events', label: 'Sự kiện & vé', icon: CalendarRange },
   { id: 'bookings', label: 'Booking', icon: ClipboardList },
   { id: 'users', label: 'Người dùng', icon: Users },
+  { id: 'coupons', label: 'Mã giảm giá', icon: Percent },
+  { id: 'scanner', label: 'Quét vé', icon: ScanLine },
 ];
 
+function ScannerTab() {
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let scanner: any = null;
+    let isMounted = true;
+    
+    import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
+      if (!isMounted) return;
+      scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false
+      );
+
+      let isProcessing = false;
+      scanner.render(
+        async (decodedText: string) => {
+          if (isProcessing) return;
+          try {
+            isProcessing = true;
+            const payload = JSON.parse(decodedText);
+            if (payload.user && payload.event && payload.ticket) {
+              setLoading(true);
+              setError(null);
+              setResult(null);
+              await checkInAdminBookingQr(payload);
+              setResult('Check-in thành công!');
+              setTimeout(() => {
+                setResult(null);
+                isProcessing = false;
+              }, 3000);
+            } else {
+              setError('Mã QR không hợp lệ.');
+              isProcessing = false;
+            }
+          } catch (e: any) {
+            setError(getErrorMessage(e));
+            setTimeout(() => {
+              isProcessing = false;
+            }, 3000);
+          } finally {
+            setLoading(false);
+          }
+        },
+        () => {
+          // ignore scan errors
+        }
+      );
+    });
+
+    return () => {
+      isMounted = false;
+      if (scanner) {
+        scanner.clear().catch(console.error);
+      }
+    };
+  }, []);
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-bold">Quét mã QR Check-in</h2>
+          <p className="text-sm text-slate-500">Đưa mã QR của khách hàng vào khung hình để kiểm tra và check-in tự động.</p>
+        </div>
+      </div>
+      {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">{error}</div>}
+      {result && <div className="mb-4 p-3 bg-teal-100 text-teal-700 rounded-md font-bold text-lg text-center">{result}</div>}
+      {loading && <div className="mb-4 p-3 text-slate-700 text-center font-semibold">Đang xử lý check-in...</div>}
+      
+      <div className="flex justify-center">
+        <div id="qr-reader" className="w-full max-w-md overflow-hidden rounded-lg border-2 border-slate-200" />
+      </div>
+    </Card>
+  );
+}
+
 export default function AdminPage() {
-  useProtected('admin');
+  const router = useRouter();
+  const { user, logout } = useProtected(['admin', 'staff']);
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [chartsData, setChartsData] = useState<{ revenueByMonth: any[]; ticketsByType: any[] } | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [selected, setSelected] = useState<Partial<Event>>(emptyEvent);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [ticketForm, setTicketForm] = useState<{ _id?: string; name: TicketName; price: number; quantity: number }>({
@@ -84,16 +181,26 @@ export default function AdminPage() {
     setLoading(true);
     setError('');
     try {
-      const [dashboardData, eventData, bookingData, userData] = await Promise.all([
-        getDashboard(),
-        getEvents(),
-        getAdminBookings(),
-        getAdminUsers(),
-      ]);
-      setDashboard(dashboardData);
-      setEvents(eventData);
-      setBookings(bookingData);
-      setUsers(userData);
+      if (user?.role === 'staff') {
+        const bookingData = await getAdminBookings();
+        setBookings(bookingData);
+        setActiveTab('bookings');
+      } else {
+        const [dashboardData, charts, eventData, bookingData, userData, couponData] = await Promise.all([
+          getDashboard(),
+          getDashboardCharts(),
+          getEvents({ limit: '1000' }),
+          getAdminBookings(),
+          getAdminUsers(),
+          getCoupons(),
+        ]);
+        setDashboard(dashboardData);
+        setChartsData(charts);
+        setEvents(eventData.items);
+        setBookings(bookingData);
+        setUsers(userData);
+        setCoupons(couponData);
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -103,13 +210,39 @@ export default function AdminPage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [user]);
+
+  function exportCSV() {
+    const headers = ['Mã Đặt Vé', 'Khách Hàng', 'Email', 'Sự Kiện', 'Trạng Thái', 'Tổng Tiền', 'Mã Giảm Giá', 'Ngày Đặt'];
+    const rows = bookings.map(b => {
+      const userName = typeof b.user === 'string' ? b.user : b.user?.name || '';
+      const userEmail = typeof b.user === 'string' ? '' : b.user?.email || '';
+      return [
+        b._id,
+        `"${userName}"`,
+        userEmail,
+        `"${b.event?.title || ''}"`,
+        b.status,
+        b.totalPrice,
+        b.discountCode || '',
+        new Date(b.createdAt).toLocaleString('vi-VN')
+      ];
+    });
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(','), ...rows.map(e => e.join(','))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "bookings_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   const filteredBookings = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     if (!keyword) return bookings;
     return bookings.filter((booking) =>
-      [booking.event?.title, typeof booking.user === 'string' ? booking.user : booking.user?.email, booking.ticket?.name]
+      [booking.event?.title, typeof booking.user === 'string' ? booking.user : booking.user?.email, typeof booking.ticket === 'object' && booking.ticket ? booking.ticket.name : undefined]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(keyword)),
     );
@@ -200,6 +333,17 @@ export default function AdminPage() {
     }
   }
 
+  async function confirmPayment(id: string) {
+    if (!window.confirm('Xác nhận đã nhận đủ tiền cho booking này? Hệ thống sẽ ngay lập tức phát hành mã QR vé cho khách.')) return;
+    try {
+      await confirmAdminBookingPayment(id);
+      setMessage('Đã xác nhận thanh toán thành công.');
+      await load();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  }
+
   async function changeUserRole(id: string, role: UserRole) {
     try {
       await updateAdminUserRole(id, role);
@@ -226,17 +370,29 @@ export default function AdminPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="font-semibold text-[#14b8a6]">Admin Console</p>
-          <h1 className="text-3xl font-extrabold text-slate-950">Quản trị hệ thống</h1>
+          <h1 className="text-3xl font-extrabold text-slate-950 dark:text-white">Quản trị hệ thống</h1>
           <p className="mt-2 text-slate-500">Theo dõi doanh thu, sự kiện, booking và người dùng.</p>
         </div>
-        <Button variant="outline" onClick={() => void load()} disabled={loading}>
-          <RefreshCcw size={17} className={loading ? 'animate-spin' : ''} />
-          Làm mới
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => void load()} disabled={loading}>
+            <RefreshCcw size={17} className={loading ? 'animate-spin' : ''} />
+            Làm mới
+          </Button>
+          <Button
+            variant="outline"
+            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={() => {
+              logout();
+              router.push('/login');
+            }}
+          >
+            Đăng xuất
+          </Button>
+        </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto rounded-lg border border-slate-200 bg-white p-2 shadow-soft">
-        {tabs.map((tab) => {
+      <div className="flex gap-2 overflow-x-auto border-b border-slate-200 p-4">
+        {tabs.filter(t => user?.role === 'admin' || t.id === 'bookings').map((tab) => {
           const Icon = tab.icon;
           return (
             <button
@@ -260,7 +416,7 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'overview' && (
-        <OverviewTab dashboard={dashboard} bookings={bookings} events={events} users={users} />
+        <OverviewTab dashboard={dashboard} charts={chartsData} bookings={bookings} events={events} users={users} />
       )}
 
       {activeTab === 'events' && (
@@ -284,17 +440,30 @@ export default function AdminPage() {
       )}
 
       {activeTab === 'bookings' && (
-        <BookingsTab search={search} setSearch={setSearch} bookings={filteredBookings} onStatusChange={changeBookingStatus} onCheckIn={checkInBooking} />
+        <BookingsTab
+          search={search}
+          setSearch={setSearch}
+          bookings={filteredBookings}
+          onStatusChange={changeBookingStatus}
+          onCheckIn={checkInBooking}
+          onConfirmPayment={confirmPayment}
+          onExport={exportCSV}
+        />
       )}
 
       {activeTab === 'users' && (
         <UsersTab search={search} setSearch={setSearch} users={filteredUsers} onRoleChange={changeUserRole} onRemove={removeUser} />
       )}
+
+      {activeTab === 'coupons' && <CouponsTab coupons={coupons} onReload={() => void load()} />}
+      {activeTab === 'scanner' && <ScannerTab />}
     </div>
   );
 }
 
-function OverviewTab({ dashboard, bookings, events, users }: { dashboard: Dashboard | null; bookings: Booking[]; events: Event[]; users: User[] }) {
+const COLORS = ['#14b8a6', '#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b'];
+
+function OverviewTab({ dashboard, charts, bookings, events, users }: { dashboard: Dashboard | null; charts: any; bookings: Booking[]; events: Event[]; users: User[] }) {
   const paidBookings = bookings.filter((booking) => booking.status === 'paid' || booking.status === 'used').length;
   const pendingBookings = bookings.filter((booking) => booking.status === 'pending').length;
 
@@ -306,6 +475,50 @@ function OverviewTab({ dashboard, bookings, events, users }: { dashboard: Dashbo
         <StatCard icon={CircleDollarSign} label="Doanh thu" value={`${(dashboard?.totalRevenue ?? 0).toLocaleString('vi-VN')}đ`} />
         <StatCard icon={Users} label="Người dùng" value={dashboard?.totalUsers ?? users.length} />
       </section>
+
+      {charts && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="p-5">
+            <h2 className="text-xl font-bold mb-4">Doanh thu theo tháng</h2>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsBarChart data={charts.revenueByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                  <YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`} />
+                  <Tooltip formatter={(value: any) => [`${Number(value || 0).toLocaleString('vi-VN')}đ`, 'Doanh thu']} />
+                  <Bar dataKey="value" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+                </RechartsBarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+          
+          <Card className="p-5">
+            <h2 className="text-xl font-bold mb-4">Tỷ lệ bán theo loại vé</h2>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={charts.ticketsByType}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                  >
+                    {charts.ticketsByType.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: any) => [value, 'Số lượng']} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <Card className="p-5">
@@ -382,7 +595,34 @@ function EventsTab(props: {
         <form onSubmit={props.onSaveEvent} className="mt-4 grid gap-3 md:grid-cols-2">
           <input placeholder="Tiêu đề" value={props.selected.title ?? ''} onChange={(e) => props.setSelected({ ...props.selected, title: e.target.value })} />
           <input placeholder="Địa điểm" value={props.selected.location ?? ''} onChange={(e) => props.setSelected({ ...props.selected, location: e.target.value })} />
-          <input placeholder="Danh mục" value={props.selected.category ?? ''} onChange={(e) => props.setSelected({ ...props.selected, category: e.target.value })} />
+          <select
+            value={props.selected.category ?? ''}
+            onChange={(e) => props.setSelected({ ...props.selected, category: e.target.value })}
+            className="w-full"
+          >
+            <option value="" disabled>
+              -- Chọn danh mục --
+            </option>
+            {[
+              'Âm nhạc',
+              'Công nghệ',
+              'Kinh doanh',
+              'Thể thao',
+              'Nghệ thuật',
+              'Giáo dục',
+              'Giải trí',
+              'Sức khỏe',
+              'Du lịch',
+              'Ẩm thực',
+              'Workshop',
+              'Hội thảo',
+              'Khác',
+            ].map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
           <select value={props.selected.status ?? 'draft'} onChange={(e) => props.setSelected({ ...props.selected, status: e.target.value as Event['status'] })}>
             <option value="draft">Nháp</option>
             <option value="published">Đang bán</option>
@@ -391,7 +631,14 @@ function EventsTab(props: {
           <input type="datetime-local" value={props.selected.startDate ?? ''} onChange={(e) => props.setSelected({ ...props.selected, startDate: e.target.value })} />
           <input type="datetime-local" value={props.selected.endDate ?? ''} onChange={(e) => props.setSelected({ ...props.selected, endDate: e.target.value })} />
           <input className="md:col-span-2" placeholder="Ảnh URL" value={props.selected.image ?? ''} onChange={(e) => props.setSelected({ ...props.selected, image: e.target.value })} />
-          <textarea className="md:col-span-2" rows={4} placeholder="Mô tả" value={props.selected.description ?? ''} onChange={(e) => props.setSelected({ ...props.selected, description: e.target.value })} />
+          <div className="md:col-span-2">
+            <ReactQuill
+              theme="snow"
+              value={props.selected.description ?? ''}
+              onChange={(content: string) => props.setSelected({ ...props.selected, description: content })}
+              className="bg-white rounded-md h-[200px] mb-12"
+            />
+          </div>
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded border border-dashed border-teal-200 bg-teal-50 px-3 py-2 text-sm font-semibold text-[#14b8a6]">
             <Upload size={16} />
             Upload ảnh
@@ -457,23 +704,84 @@ function EventsTab(props: {
   );
 }
 
+function QRScanner({ onScan, onClose }: { onScan: (text: string) => void; onClose: () => void }) {
+  useEffect(() => {
+    let scanner: any = null;
+    import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
+      scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+      scanner.render(
+        (decodedText: string) => {
+          scanner.clear();
+          onScan(decodedText);
+        },
+        (error: any) => { /* ignore frame errors */ }
+      );
+    });
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(console.error);
+      }
+    };
+  }, [onScan]);
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+        <h3 className="mb-4 text-center text-lg font-bold">Quét mã QR Vé</h3>
+        <div id="qr-reader" className="overflow-hidden rounded-lg"></div>
+        <Button variant="outline" className="mt-4 w-full" onClick={onClose}>Đóng</Button>
+      </div>
+    </div>
+  );
+}
+
 function BookingsTab({
   search,
   setSearch,
   bookings,
   onStatusChange,
   onCheckIn,
+  onConfirmPayment,
+  onExport,
 }: {
   search: string;
   setSearch: (value: string) => void;
   bookings: Booking[];
   onStatusChange: (id: string, status: BookingStatus) => Promise<void>;
   onCheckIn: (id: string) => Promise<void>;
+  onConfirmPayment: (id: string) => Promise<void>;
+  onExport: () => void;
 }) {
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleScan = async (text: string) => {
+    setShowScanner(false);
+    try {
+      const data = JSON.parse(text);
+      if (data.user && data.event && data.ticket) {
+        await checkInAdminBookingQr(data);
+        alert('Check-in thành công!');
+        // Refresh bookings list if needed
+        window.location.reload(); // Simple way to refresh data
+      } else {
+        alert('Mã QR không hợp lệ!');
+      }
+    } catch (e: any) {
+      alert(getErrorMessage(e) || 'Không thể đọc mã QR!');
+    }
+  };
+
   return (
-    <Card className="p-5">
-      <TableHeader title="Quản lý booking" search={search} setSearch={setSearch} placeholder="Tìm booking, email, sự kiện..." />
-      <AdminBookingTable bookings={bookings} onStatusChange={onStatusChange} onCheckIn={onCheckIn} />
+    <Card className="p-5 relative">
+      <div className="flex items-center justify-between mb-4">
+        <TableHeader title="Quản lý booking" search={search} setSearch={setSearch} placeholder="Tìm booking..." />
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onExport}>Tải Excel (CSV)</Button>
+          <Button onClick={() => setShowScanner(true)}>Quét QR Check-in</Button>
+        </div>
+      </div>
+      {showScanner && <QRScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
+      <AdminBookingTable bookings={bookings} onStatusChange={onStatusChange} onCheckIn={onCheckIn} onConfirmPayment={onConfirmPayment} />
     </Card>
   );
 }
@@ -500,16 +808,17 @@ function UsersTab({ search, setSearch, users, onRoleChange, onRemove }: { search
                 <tr key={id} className="border-b border-slate-100">
                   <td className="py-3">
                     <strong>{user.name}</strong>
-                    <p className="text-xs text-slate-500">#{id?.slice(-8).toUpperCase()}</p>
+                    <p className="text-xs text-slate-500">#{id?.slice(-8)?.toUpperCase()}</p>
                   </td>
                   <td>
                     <p>{user.email}</p>
                     <p className="text-xs text-slate-500">{user.phone || 'Chưa có SĐT'}</p>
                   </td>
                   <td>
-                    <select value={user.role} onChange={(e) => void onRoleChange(id, e.target.value as UserRole)}>
-                      <option value="customer">customer</option>
-                      <option value="admin">admin</option>
+                    <select className="bg-transparent" value={user.role} onChange={(e) => void onRoleChange(id, e.target.value as UserRole)}>
+                      <option value="customer">Khách hàng</option>
+                      <option value="staff">Nhân viên</option>
+                      <option value="admin">Quản trị viên</option>
                     </select>
                   </td>
                   <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString('vi-VN') : '-'}</td>
@@ -534,11 +843,13 @@ function AdminBookingTable({
   compact,
   onStatusChange,
   onCheckIn,
+  onConfirmPayment,
 }: {
   bookings: Booking[];
   compact?: boolean;
   onStatusChange?: (id: string, status: BookingStatus) => Promise<void>;
   onCheckIn?: (id: string) => Promise<void>;
+  onConfirmPayment?: (id: string) => Promise<void>;
 }) {
   return (
     <div className="mt-4 overflow-x-auto">
@@ -559,26 +870,33 @@ function AdminBookingTable({
             <tr key={booking._id} className="border-b border-slate-100">
               <td className="py-3">{typeof booking.user === 'string' ? booking.user : booking.user?.email}</td>
               <td>{booking.event?.title}</td>
-              <td>{booking.ticket?.name} x {booking.quantity}</td>
+              <td>{typeof booking.ticket === 'object' && booking.ticket !== null ? booking.ticket.name : 'Unknown'} x {booking.quantity}</td>
               <td>{booking.totalPrice.toLocaleString('vi-VN')}đ</td>
               <td>
                 {onStatusChange ? (
                   <select value={booking.status} onChange={(e) => void onStatusChange(booking._id, e.target.value as BookingStatus)}>
-                    <option value="pending">pending</option>
-                    <option value="paid">paid</option>
-                    <option value="used">used</option>
-                    <option value="cancelled">cancelled</option>
+                    <option value="pending">Chờ thanh toán</option>
+                    <option value="paid">Đã thanh toán</option>
+                    <option value="used">Đã check-in</option>
+                    <option value="cancelled">Đã hủy</option>
                   </select>
                 ) : (
                   <BookingStatusBadge status={booking.status} />
                 )}
               </td>
               {!compact && <td>{new Date(booking.createdAt).toLocaleString('vi-VN')}</td>}
-              {onCheckIn && (
-                <td className="text-right">
-                  <Button type="button" variant="outline" disabled={booking.status !== 'paid'} onClick={() => void onCheckIn(booking._id)}>
-                    Check-in
-                  </Button>
+              {(onCheckIn || onConfirmPayment) && (
+                <td className="text-right space-x-2">
+                  {onConfirmPayment && booking.status === 'pending' && (
+                    <Button type="button" variant="primary" className="bg-[#14b8a6] hover:bg-teal-600" onClick={() => void onConfirmPayment(booking._id)}>
+                      Xác nhận thu tiền
+                    </Button>
+                  )}
+                  {onCheckIn && (
+                    <Button type="button" variant="outline" disabled={booking.status !== 'paid'} onClick={() => void onCheckIn(booking._id)}>
+                      Check-in
+                    </Button>
+                  )}
                 </td>
               )}
             </tr>
@@ -642,4 +960,96 @@ function BookingStatusBadge({ status }: { status: BookingStatus }) {
   if (status === 'used') return <Badge tone="slate">Đã sử dụng</Badge>;
   if (status === 'cancelled') return <Badge tone="rose">Đã hủy</Badge>;
   return <Badge tone="amber">Chờ thanh toán</Badge>;
+}
+
+function CouponsTab({ coupons, onReload }: { coupons: Coupon[]; onReload: () => void }) {
+  const [form, setForm] = useState({ code: '', discountType: 'percent', discountValue: 10, quantity: 100, validUntil: '' });
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    try {
+      await createCoupon({ ...form, discountType: form.discountType as any });
+      setForm({ code: '', discountType: 'percent', discountValue: 10, quantity: 100, validUntil: '' });
+      onReload();
+    } catch (err) {
+      alert(getErrorMessage(err));
+    }
+  }
+
+  async function handleRemove(id: string) {
+    if (!confirm('Xóa mã giảm giá này?')) return;
+    try {
+      await deleteCoupon(id);
+      onReload();
+    } catch (err) {
+      alert(getErrorMessage(err));
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-5">
+        <h2 className="text-xl font-bold mb-4">Tạo mã giảm giá</h2>
+        <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-6 items-end">
+          <div className="md:col-span-2">
+            <label className="text-sm font-medium">Mã code</label>
+            <input required className="mt-1 w-full rounded-md border p-2 text-sm" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="VD: EVENT10" />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Loại</label>
+            <select className="mt-1 w-full rounded-md border p-2 text-sm" value={form.discountType} onChange={(e) => setForm({ ...form, discountType: e.target.value })}>
+              <option value="percent">%</option>
+              <option value="fixed">Tiền mặt</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium">Giá trị</label>
+            <input required type="number" min="0" className="mt-1 w-full rounded-md border p-2 text-sm" value={form.discountValue} onChange={(e) => setForm({ ...form, discountValue: Number(e.target.value) })} />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Số lượng</label>
+            <input required type="number" min="1" className="mt-1 w-full rounded-md border p-2 text-sm" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Hết hạn</label>
+            <input required type="datetime-local" className="mt-1 w-full rounded-md border p-2 text-sm" value={form.validUntil} onChange={(e) => setForm({ ...form, validUntil: e.target.value })} />
+          </div>
+          <div className="md:col-span-6 flex justify-end">
+            <Button type="submit">
+              <Save size={16} className="mr-2" /> Lưu mã
+            </Button>
+          </div>
+        </form>
+      </Card>
+      <Card className="p-5">
+        <h2 className="text-xl font-bold mb-4">Danh sách mã giảm giá</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[700px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-500">
+                <th className="py-3">Mã code</th>
+                <th>Giảm giá</th>
+                <th>Đã dùng</th>
+                <th>Hết hạn</th>
+                <th className="text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {coupons.map((c) => (
+                <tr key={c._id} className="border-b border-slate-100">
+                  <td className="py-3 font-bold">{c.code}</td>
+                  <td>{c.discountType === 'percent' ? `${c.discountValue}%` : `${c.discountValue.toLocaleString('vi-VN')}đ`}</td>
+                  <td>{c.used} / {c.quantity}</td>
+                  <td>{new Date(c.validUntil).toLocaleString('vi-VN')}</td>
+                  <td className="text-right">
+                    <Button variant="danger" onClick={() => void handleRemove(c._id)}>Xóa</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
 }

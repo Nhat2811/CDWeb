@@ -6,17 +6,32 @@ export async function getDashboard() {
   return data.data;
 }
 
+export async function getDashboardCharts() {
+  const { data } = await api.get<ApiResponse<{ revenueByMonth: any[]; ticketsByType: any[] }>>('/admin/dashboard-charts');
+  return data.data;
+}
+
 export async function getAdminBookings() {
   const { data } = await api.get<ApiResponse<Booking[]>>('/admin/bookings');
   return data.data;
 }
 
-export async function updateAdminBookingStatus(id: string, status: BookingStatus) {
-  const { data } = await api.patch<ApiResponse<Booking>>(`/admin/bookings/${id}/status`, { status });
+export async function updateAdminBookingStatus(id: string, status: BookingStatus): Promise<Booking> {
+  const { data } = await api.patch<{ data: Booking }>(`/admin/bookings/${id}/status`, { status });
   return data.data;
 }
 
-export async function checkInAdminBooking(id: string) {
+export async function checkInAdminBookingQr(payload: { user: string; event: string; ticket: string }) {
+  const { data } = await api.post<{ success: boolean; data: Booking }>(`/bookings/check-in-qr`, payload);
+  return data.data;
+}
+
+export async function confirmAdminBookingPayment(id: string): Promise<any> {
+  const { data } = await api.patch<{ data: any }>(`/admin/bookings/${id}/confirm-payment`);
+  return data.data;
+}
+
+export async function checkInAdminBooking(id: string): Promise<Booking> {
   const { data } = await api.patch<ApiResponse<Booking>>(`/bookings/${id}/check-in`);
   return data.data;
 }

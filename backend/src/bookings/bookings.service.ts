@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import * as QRCode from 'qrcode';
 import { JwtUser } from '../common/types/jwt-user.type';
 import { TicketsService } from '../tickets/tickets.service';
+import { EventsService } from '../events/events.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { Booking, BookingStatus } from './schemas/booking.schema';
 
@@ -12,6 +13,7 @@ export class BookingsService {
   constructor(
     @InjectModel(Booking.name) private readonly bookingModel: Model<Booking>,
     private readonly ticketsService: TicketsService,
+    private readonly eventsService: EventsService,
   ) {}
 
   async create(user: JwtUser, dto: CreateBookingDto) {
@@ -19,6 +21,26 @@ export class BookingsService {
     if (ticket.event.toString() !== dto.event) {
       throw new BadRequestException('Ticket does not belong to event');
     }
+
+    const event = await this.eventsService.findOne(dto.event);
+    if (dto.seats && dto.seats.length > 0) {
+      if (dto.seats.length !== dto.quantity) {
+        throw new BadRequestException('Number of seats must match ticket quantity');
+      }
+      
+      const alreadyBooked = event.bookedSeats || [];
+      const conflicting = dto.seats.filter(seat => alreadyBooked.includes(seat));
+      
+      if (conflicting.length > 0) {
+        throw new BadRequestException(`Seats ${conflicting.join(', ')} are already booked`);
+      }
+      
+      // Reserve seats on event temporarily (or permanently since it's just an array)
+      await this.eventsService.update(event._id.toString(), {
+        bookedSeats: [...alreadyBooked, ...dto.seats]
+      } as any);
+    }
+
     await this.ticketsService.reserve(dto.ticket, dto.quantity);
     const totalPrice = ticket.price * dto.quantity;
     const qrCode = await QRCode.toDataURL(
@@ -29,6 +51,7 @@ export class BookingsService {
       event: new Types.ObjectId(dto.event),
       ticket: new Types.ObjectId(dto.ticket),
       quantity: dto.quantity,
+      seats: dto.seats || [],
       totalPrice,
       discountAmount: 0,
       status: 'pending',
@@ -77,7 +100,7 @@ export class BookingsService {
       }),
     );
     const savedBooking = await booking.save();
-    return savedBooking.populate(['event', 'ticket']);
+    return savedBooking.populate(['event', 'ticket', 'user']);
   }
 
   async cancel(id: string, user: JwtUser) {
@@ -87,6 +110,17 @@ export class BookingsService {
     booking.status = 'cancelled';
     await booking.save();
     await this.ticketsService.release(booking.ticket.toString(), booking.quantity);
+
+    if (booking.seats && booking.seats.length > 0) {
+      const event = await this.eventsService.findOne(booking.event.toString());
+      if (event) {
+        const remainingSeats = (event.bookedSeats || []).filter(s => !booking.seats.includes(s));
+        await this.eventsService.update(event._id.toString(), {
+          bookedSeats: remainingSeats
+        } as any);
+      }
+    }
+
     return booking;
   }
 
@@ -139,6 +173,38 @@ export class BookingsService {
     return booking.save();
   }
 
+  async checkInByPayload(payload: { user: string; event: string; ticket: string }) {
+    const booking = await this.bookingModel
+      .findOne({
+        user: new Types.ObjectId(payload.user),
+        event: new Types.ObjectId(payload.event),
+        ticket: new Types.ObjectId(payload.ticket),
+        status: 'paid'
+      })
+      .populate('user', 'name email phone role')
+      .populate('event', 'title startDate location image')
+      .populate('ticket', 'name price')
+      .exec();
+    
+    if (!booking) {
+      // Also check if they already checked in
+      const alreadyCheckedIn = await this.bookingModel.findOne({
+        user: new Types.ObjectId(payload.user),
+        event: new Types.ObjectId(payload.event),
+        ticket: new Types.ObjectId(payload.ticket),
+        status: 'used'
+      });
+      if (alreadyCheckedIn) {
+        throw new BadRequestException('This ticket has already been checked in');
+      }
+      throw new NotFoundException('No valid paid booking found for this ticket');
+    }
+    
+    booking.status = 'used';
+    booking.checkedInAt = new Date();
+    return booking.save();
+  }
+
   async revenue() {
     const [result] = await this.bookingModel.aggregate<{ total: number }>([
       { $match: { status: { $in: ['paid', 'used'] } } },
@@ -161,11 +227,11 @@ export class BookingsService {
         $group: {
           _id: null,
           totalBookings: { $sum: 1 },
-          paidBookings: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, 1, 0] } },
+          paidBookings: { $sum: { $cond: [{ $in: ['$status', ['paid', 'used']] }, 1, 0] } },
           pendingBookings: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
           cancelledBookings: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 1, 0] } },
-          totalTickets: { $sum: { $cond: [{ $eq: ['$status', 'cancelled'] }, 0, '$quantity'] } },
-          totalSpent: { $sum: { $cond: [{ $eq: ['$status', 'paid'] }, '$totalPrice', 0] } },
+          totalTickets: { $sum: { $cond: [{ $in: ['$status', ['paid', 'used']] }, '$quantity', 0] } },
+          totalSpent: { $sum: { $cond: [{ $in: ['$status', ['paid', 'used']] }, '$totalPrice', 0] } },
         },
       },
     ]);
@@ -188,5 +254,48 @@ export class BookingsService {
       throw new ForbiddenException('You cannot access this booking');
     }
     return booking;
+  }
+
+  async getChartData() {
+    const revenueByMonth = await this.bookingModel.aggregate([
+      { $match: { status: { $in: ['paid', 'used'] } } },
+      {
+        $group: {
+          _id: { $month: '$createdAt' },
+          value: { $sum: '$totalPrice' },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+    const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+    const formattedRevenue = revenueByMonth.map((r) => ({
+      name: months[r._id - 1],
+      value: r.value,
+    }));
+
+    const ticketsByType = await this.bookingModel.aggregate([
+      { $match: { status: { $in: ['paid', 'used'] } } },
+      {
+        $lookup: {
+          from: 'tickets',
+          localField: 'ticket',
+          foreignField: '_id',
+          as: 'ticketInfo',
+        },
+      },
+      { $unwind: '$ticketInfo' },
+      {
+        $group: {
+          _id: '$ticketInfo.name',
+          value: { $sum: '$quantity' },
+        },
+      },
+    ]);
+    const formattedTickets = ticketsByType.map((t) => ({
+      name: t._id,
+      value: t.value,
+    }));
+
+    return { revenueByMonth: formattedRevenue, ticketsByType: formattedTickets };
   }
 }

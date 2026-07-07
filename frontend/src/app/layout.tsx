@@ -3,6 +3,8 @@ import './globals.css';
 import { AppShell } from '@/components/app-shell';
 import { Providers } from '@/components/providers';
 
+import { ThemeProvider } from '@/components/theme-provider';
+
 export const metadata: Metadata = {
   title: 'Event Booking System',
   description: 'Hệ thống đặt chỗ và quản lý vé sự kiện',
@@ -10,11 +12,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="vi">
+    <html lang="vi" suppressHydrationWarning>
       <body>
-        <Providers>
-          <AppShell>{children}</AppShell>
-        </Providers>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <Providers>
+            <AppShell>{children}</AppShell>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

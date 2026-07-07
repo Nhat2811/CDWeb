@@ -4,8 +4,8 @@ import { Booking } from '../../bookings/schemas/booking.schema';
 import { User } from '../../users/schemas/user.schema';
 
 export type PaymentDocument = HydratedDocument<Payment>;
-export type PaymentMethod = 'card' | 'bank_transfer' | 'e_wallet';
-export type PaymentProvider = 'mock' | 'stripe' | 'vnpay' | 'momo';
+export type PaymentMethod = 'card' | 'bank_transfer' | 'e_wallet' | 'cod';
+export type PaymentProvider = 'mock' | 'stripe' | 'vnpay' | 'momo' | 'manual';
 export type PaymentTransactionStatus = 'pending' | 'success' | 'failed';
 
 @Schema({ timestamps: true })
@@ -16,10 +16,10 @@ export class Payment {
   @Prop({ type: Types.ObjectId, ref: User.name, required: true, index: true })
   user: Types.ObjectId;
 
-  @Prop({ enum: ['card', 'bank_transfer', 'e_wallet'], required: true })
+  @Prop({ enum: ['card', 'bank_transfer', 'e_wallet', 'cod'], required: true })
   method: PaymentMethod;
 
-  @Prop({ enum: ['mock', 'stripe', 'vnpay', 'momo'], default: 'mock', index: true })
+  @Prop({ enum: ['mock', 'stripe', 'vnpay', 'momo', 'manual'], default: 'mock', index: true })
   provider: PaymentProvider;
 
   @Prop({ enum: ['pending', 'success', 'failed'], required: true, index: true })

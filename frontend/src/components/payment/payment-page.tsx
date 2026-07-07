@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useProtected } from '@/hooks/use-protected';
 import { getErrorMessage } from '@/services/api';
+import { getActiveCoupons, Coupon } from '@/services/coupons.service';
 import { checkoutPayment, getPaymentBooking, getPaymentGatewayConfig, getPaymentHistory } from '@/services/payments.service';
 import { useAuth } from '@/store/auth-store';
 import {
@@ -44,22 +45,16 @@ type ToastState = {
   message: string;
 } | null;
 
-const couponHints = [
-  { code: 'EVENT10', label: 'Giảm 10%' },
-  { code: 'VIP50', label: 'Giảm tối đa 50.000đ' },
-  { code: 'STUDENT20', label: 'Giảm 20%' },
-];
-
 function formatCurrency(value: number) {
   return `${value.toLocaleString('vi-VN')}đ`;
 }
 
-function calculateDiscountPreview(subtotal: number, code: string) {
-  const normalized = code.trim().toUpperCase();
-  if (normalized === 'EVENT10') return Math.round(subtotal * 0.1);
-  if (normalized === 'VIP50') return Math.min(50000, subtotal);
-  if (normalized === 'STUDENT20') return Math.round(subtotal * 0.2);
-  return 0;
+function calculateDiscountPreview(subtotal: number, code: string | null | undefined, coupons: Coupon[]) {
+  const normalized = (code || '').trim().toUpperCase();
+  const coupon = coupons.find(c => c.code === normalized);
+  if (!coupon) return 0;
+  if (coupon.discountType === 'percent') return Math.round(subtotal * (coupon.discountValue / 100));
+  return Math.min(coupon.discountValue, subtotal);
 }
 
 function toPaymentStatus(status: Booking['status']): PaymentStatus {
@@ -78,6 +73,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
   const [method, setMethod] = useState<PaymentMethodValue>('vnpay');
   const [gatewayConfig, setGatewayConfig] = useState<PaymentGatewayConfig | null>(null);
   const [discountCode, setDiscountCode] = useState(initialDiscountCode);
+  const [activeCoupons, setActiveCoupons] = useState<Coupon[]>([]);
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const [history, setHistory] = useState<PaymentTransaction[]>([]);
   const [status, setStatus] = useState<PaymentStatus>('pending');
@@ -89,16 +85,16 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
 
   const subtotal = useMemo(() => {
     if (!booking) return 0;
-    return (booking.ticket?.price ?? booking.totalPrice) * booking.quantity;
+    return ((typeof booking.ticket === 'object' && booking.ticket ? booking.ticket.price : undefined) ?? booking.totalPrice) * booking.quantity;
   }, [booking]);
-  const previewDiscount = booking?.status === 'pending' ? calculateDiscountPreview(subtotal, discountCode) : booking?.discountAmount ?? 0;
+  const previewDiscount = booking?.status === 'pending' ? calculateDiscountPreview(subtotal, discountCode, activeCoupons) : booking?.discountAmount ?? 0;
   const payableAmount = Math.max(subtotal - previewDiscount, 0);
   const canPay = booking?.status === 'pending' && !processing;
   const selectedProvider = resolvePaymentMethod(method).provider;
   const selectedQrGateway =
     (selectedProvider === 'momo' || selectedProvider === 'vnpay') && gatewayConfig?.[selectedProvider]?.enabled === false;
-  const normalizedDiscount = discountCode.trim().toUpperCase();
-  const invalidDiscount = Boolean(normalizedDiscount) && previewDiscount === 0 && !couponHints.some((coupon) => coupon.code === normalizedDiscount);
+  const normalizedDiscount = (discountCode || '').trim().toUpperCase();
+  const invalidDiscount = Boolean(normalizedDiscount) && previewDiscount === 0 && !activeCoupons.some((coupon) => coupon.code === normalizedDiscount);
 
   async function load() {
     setLoading(true);
@@ -107,9 +103,14 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
       const nextBooking = await getPaymentBooking(bookingId);
       setBooking(nextBooking);
       setStatus(toPaymentStatus(nextBooking.status));
-      const [nextHistory, nextGatewayConfig] = await Promise.all([getPaymentHistory(bookingId), getPaymentGatewayConfig()]);
+      const [nextHistory, nextGatewayConfig, nextCoupons] = await Promise.all([
+        getPaymentHistory(bookingId), 
+        getPaymentGatewayConfig(),
+        getActiveCoupons().catch(() => [])
+      ]);
       setHistory(nextHistory);
       setGatewayConfig(nextGatewayConfig);
+      setActiveCoupons(nextCoupons);
     } catch (err) {
       const message = getErrorMessage(err);
       setError(message);
@@ -160,7 +161,7 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
       setBooking(response.booking);
       setReceipt(response.receipt ?? null);
       setHistory(await getPaymentHistory(booking._id));
-      setStatus('paid');
+      setStatus(toPaymentStatus(response.booking.status));
       setSuccessOpen(true);
       showToast('success', 'Thanh toán thành công.');
     } catch (err) {
@@ -223,12 +224,6 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
 
           <PaymentMethodSelector value={method} disabled={!canPay} gatewayConfig={gatewayConfig} onChange={setMethod} />
 
-          {gatewayConfig && (
-            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">
-              Mot so cong thanh toan can cau hinh khoa tich hop tren backend. MoMo/VNPay co the thanh toan bang ma QR khi cong truc tiep chua san sang.
-            </div>
-          )}
-
           <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/60">
             <div className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-100">
               <Tag size={17} className="text-[#14b8a6]" />
@@ -246,19 +241,21 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
                 Xóa
               </Button>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {couponHints.map((coupon) => (
-                <button
-                  key={coupon.code}
-                  type="button"
-                  disabled={!canPay}
-                  onClick={() => setDiscountCode(coupon.code)}
-                  className="rounded border border-teal-100 bg-white px-3 py-2 text-xs font-bold text-[#0f9f8e] hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {coupon.code} · {coupon.label}
-                </button>
-              ))}
-            </div>
+            {activeCoupons.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {activeCoupons.map((coupon) => (
+                  <button
+                    key={coupon.code}
+                    type="button"
+                    disabled={!canPay}
+                    onClick={() => setDiscountCode(coupon.code)}
+                    className="rounded border border-teal-100 bg-white px-3 py-2 text-xs font-bold text-[#0f9f8e] hover:bg-teal-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {coupon.code} · {coupon.discountType === 'percent' ? `Giảm ${coupon.discountValue}%` : `Giảm ${coupon.discountValue.toLocaleString('vi-VN')}đ`}
+                  </button>
+                ))}
+              </div>
+            )}
             {invalidDiscount && <p className="mt-2 text-sm font-semibold text-rose-700">Mã giảm giá không hợp lệ.</p>}
           </div>
 
@@ -355,7 +352,8 @@ export function PaymentPage({ bookingId }: PaymentPageProps) {
 
 function resolvePaymentMethod(method: PaymentMethodValue): { checkoutMethod: PaymentCheckoutMethod; provider: PaymentProvider } {
   if (method === 'vnpay') return { checkoutMethod: 'bank_transfer', provider: 'vnpay' };
-  if (method === 'momo') return { checkoutMethod: 'e_wallet', provider: 'momo' };
+  if (method === 'cod') return { checkoutMethod: 'cod', provider: 'manual' };
+  if (method === 'transfer') return { checkoutMethod: 'bank_transfer', provider: 'manual' };
   return { checkoutMethod: 'bank_transfer', provider: 'vnpay' };
 }
 

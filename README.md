@@ -1,135 +1,77 @@
 # Event Booking System
 
-Fullstack web app dat ve su kien, gom luong khach hang, thanh toan, ve QR va trang quan tri.
+Fullstack web app đặt vé sự kiện, bao gồm luồng khách hàng, thanh toán đa nền tảng, gửi vé QR qua email, quét QR Check-in trực tiếp và trang quản trị toàn diện.
 
 ## Tech Stack
 
-- Backend: NestJS, MongoDB, Mongoose, JWT, class-validator
-- Frontend: Next.js App Router, TypeScript, TailwindCSS, framer-motion, lucide-react
-- DevOps: Docker Compose cho MongoDB, backend va frontend
+- **Backend**: NestJS, MongoDB, Mongoose, JWT, Nodemailer (Gửi vé QR), Stripe, VNPay, MoMo, Google Auth.
+- **Frontend**: Next.js App Router, TypeScript, TailwindCSS, framer-motion, html5-qrcode (Quét QR), react-quill-new (Rich text), recharts (Biểu đồ).
+- **DevOps**: Docker Compose cho MongoDB, backend và frontend.
 
-## Chay Local
+## Tính Năng Nổi Bật
 
+### 🧑‍💻 Khách Hàng (Customer)
+- **Xác Thực**: Đăng nhập/Đăng ký tài khoản (Local & Google Auth).
+- **Khám Phá Sự Kiện**: Xem danh sách, chi tiết sự kiện, và tìm kiếm sự kiện.
+- **Đặt Vé**: Chọn hạng vé, số lượng, và áp dụng mã giảm giá (Coupon).
+- **Thanh Toán**: Hỗ trợ thanh toán qua Stripe, VNPay, MoMo hoặc xác nhận nội bộ.
+- **Vé & QR Code**: Nhận vé kèm mã QR qua Email (SMTP). Xem lại vé đã mua trực tiếp trong hệ thống.
+- **Đánh Giá (Reviews)**: Viết đánh giá (Ratings & Reviews) cho sự kiện.
+
+### 👑 Quản Trị Viên (Admin)
+- **Dashboard**: Thống kê doanh thu, số lượng vé bán ra, và biểu đồ trực quan (Recharts).
+- **Quản Lý Sự Kiện**: Thêm, sửa, xóa sự kiện. Upload ảnh sự kiện bằng Multer. Mô tả bằng Rich Text Editor.
+- **Quản Lý Vé & Booking**: Theo dõi đơn hàng (Pending, Paid, Cancelled).
+- **Check-in Tự Động**: Quét mã QR trực tiếp từ camera (tích hợp html5-qrcode) để Check-in cho khách ngay tại sự kiện.
+- **Quản Lý Mã Giảm Giá**: Tạo, sửa, xóa mã giảm giá (Coupon CRUD).
+- **Quản Lý Người Dùng**: Cấp/thu hồi quyền admin, xóa tài khoản.
+
+## Chạy Local
+
+Cài đặt tất cả phụ thuộc:
 ```bash
 npm run install:all
+```
+
+Tạo file biến môi trường:
+```bash
 copy backend\.env.example backend\.env
 copy frontend\.env.example frontend\.env.local
+```
+*(Hãy điền các thông số SMTP, Google Auth, Stripe, VNPay, MoMo trong file biến môi trường nếu muốn test các tính năng thực tế)*
+
+Khởi tạo dữ liệu mẫu (Seed):
+```bash
 npm run seed --prefix backend
+```
+
+Chạy dự án:
+```bash
 npm run dev
 ```
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:4000
-- MongoDB mac dinh: `mongodb://localhost:27017/event_booking`
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:4000
+- **MongoDB mặc định**: `mongodb://localhost:27017/event_booking`
 
-## Chay Docker
+## Chạy Docker
 
 ```bash
 docker compose up --build
 ```
-
-Sau khi cac container chay xong, khoi tao du lieu:
-
+Sau khi các container chạy xong, mở một terminal khác để khởi tạo dữ liệu:
 ```bash
 npm run seed --prefix backend
 ```
 
-## Tai Khoan Khoi Tao
+## Tài Khoản Khởi Tạo Mẫu
+- **Admin**: `admin@example.com` / `123456`
+- **Customer**: `customer@example.com` / `123456`
 
-- Admin: `admin@example.com` / `123456`
-- Customer: `customer@example.com` / `123456`
-
-## Luong Chinh
-
-1. Dang nhap bang customer.
-2. Vao danh sach su kien, chon su kien, chon loai ve va so luong.
-3. Xac nhan booking va sang trang thanh toan.
-4. Chon phuong thuc thanh toan: Stripe, VNPay, MoMo hoac xac nhan noi bo.
-5. Thanh toan thanh cong de cap nhat booking thanh `paid` va xem QR code o trang `Ve cua toi`.
-5. Nhap ma giam gia `EVENT10`, `VIP50` hoac `STUDENT20`.
-6. Dang nhap admin de quan ly dashboard, su kien, ve, booking, nguoi dung va check-in ve paid.
-
-## API Chinh
-
-### Auth
-
-- `POST /auth/register`
-- `POST /auth/login`
-
-### Events
-
-- `GET /events`
-- `GET /events/:id`
-- `POST /events` admin
-- `PATCH /events/:id` admin
-- `DELETE /events/:id` admin
-
-### Tickets
-
-- `GET /tickets/event/:eventId`
-- `POST /tickets` admin
-- `PATCH /tickets/:id` admin
-- `DELETE /tickets/:id` admin
-
-### Bookings
-
-- `POST /bookings`
-- `GET /bookings/my`
-- `GET /bookings/my-tickets`
-- `GET /bookings/:id`
-- `PATCH /bookings/:id/pay`
-- `PATCH /bookings/:id/cancel`
-
-### Payments
-
-- `POST /payments/checkout`
-- `GET /payments/:bookingId/status`
-- `GET /payments/:bookingId/history`
-- `GET /payments/stripe/return`
-- `POST /payments/stripe/webhook`
-- `GET /payments/vnpay/return`
-- `POST /payments/momo/ipn`
-- `GET /payments/momo/return`
-
-### Admin
-
-- `GET /admin/dashboard`
-- `GET /admin/bookings`
-- `PATCH /admin/bookings/:id/status`
-- `GET /admin/users`
-- `PATCH /admin/users/:id/role`
-- `DELETE /admin/users/:id`
-
-### Check-in
-
-- `PATCH /bookings/:id/check-in` admin
-
-## Cau Hinh Cong Thanh Toan
-
-- Stripe can `STRIPE_SECRET_KEY` va `STRIPE_WEBHOOK_SECRET`.
-- VNPay can `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_PAYMENT_URL`.
-- MoMo can `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`, `MOMO_ENDPOINT`.
-- `BACKEND_PUBLIC_URL` phai tro ve backend public URL de gateway redirect/IPN ve dung server.
-
-### The Test VNPay Sandbox
-
-- Ngan hang: `NCB`
-- So the: `9704198526191432198`
-- Ten chu the: `NGUYEN VAN A`
-- Ngay phat hanh: `07/15`
-- Mat khau OTP: `123456`
-
-## Ghi Chu Van Hanh
-
-- Phuong thuc xac nhan noi bo dung cho moi truong chua cau hinh credentials cong thanh toan.
-- Email xac nhan hien la receipt trong response, chua gui SMTP that.
-- Coupon backend ho tro `EVENT10`, `VIP50`, `STUDENT20`.
-- QR code chua quet camera truc tiep; admin check-in bang booking trong bang admin.
-
-## Du Lieu Khoi Tao
-
-```bash
-npm run seed --prefix backend
-```
-
-Seed tao danh sach su kien, moi su kien co 4 hang ve va moi hang ve co 100 ve. Script seed co the chay lai nhieu lan; cac su kien va ve se duoc cap nhat theo title/name hien co.
+## Cấu Hình Dịch Vụ Mở Rộng (.env)
+- **Email (SMTP)**: Cần `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` để gửi vé QR.
+- **Google Auth**: Cần `GOOGLE_CLIENT_ID` cho cả Frontend và Backend.
+- **Stripe**: Cần `STRIPE_SECRET_KEY` và `STRIPE_WEBHOOK_SECRET`.
+- **VNPay**: Cần `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_PAYMENT_URL`.
+- **MoMo**: Cần `MOMO_PARTNER_CODE`, `MOMO_ACCESS_KEY`, `MOMO_SECRET_KEY`, `MOMO_ENDPOINT`.
+- *Lưu ý*: `BACKEND_PUBLIC_URL` phải trỏ về backend URL công khai để cổng thanh toán redirect/IPN về đúng server và đường dẫn ảnh Upload hoạt động đúng.

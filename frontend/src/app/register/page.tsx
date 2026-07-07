@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { getErrorMessage } from '@/services/api';
 import { useAuth } from '@/store/auth-store';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register } = useAuth();
+  const { register, loginWithGoogle, loginWithFacebook } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,7 +46,46 @@ export default function RegisterPage() {
           {loading ? 'Đang xử lý...' : 'Tạo tài khoản'}
         </button>
       </form>
-      <p className="mt-4 text-sm">
+
+      <div className="my-5 flex items-center before:mt-0.5 before:flex-1 before:border-t before:border-slate-200 after:mt-0.5 after:flex-1 after:border-t after:border-slate-200">
+        <p className="mx-4 mb-0 text-center text-sm font-medium text-slate-500">Hoặc</p>
+      </div>
+      <div className="flex flex-col items-center justify-center space-y-3">
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            if (credentialResponse.credential) {
+              setLoading(true);
+              setError('');
+              try {
+                const user = await loginWithGoogle(credentialResponse.credential);
+                if (user.role === 'admin' || user.role === 'staff') {
+                  router.push('/admin');
+                } else {
+                  router.push('/');
+                }
+              } catch (err) {
+                setError(getErrorMessage(err));
+              } finally {
+                setLoading(false);
+              }
+            }
+          }}
+          onError={() => setError('Đăng nhập Google thất bại')}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            const clientId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || 'YOUR_FACEBOOK_APP_ID';
+            const redirectUri = encodeURIComponent(`${window.location.origin}/login/facebook`);
+            window.location.href = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=email,public_profile`;
+          }}
+          className="w-full max-w-[200px] rounded bg-[#1877F2] px-4 py-2 font-semibold text-white shadow-sm hover:bg-[#166FE5]"
+        >
+          Đăng nhập Facebook
+        </button>
+      </div>
+
+      <p className="mt-6 text-sm">
         Đã có tài khoản? <Link className="font-semibold text-coral" href="/login">Đăng nhập</Link>
       </p>
     </div>

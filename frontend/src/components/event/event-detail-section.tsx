@@ -5,6 +5,25 @@ import { CalendarClock, Clock3, MapPin, ShieldCheck, Sparkles, Tags, UsersRound 
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Event, Ticket } from '@/types';
+import { Review } from '@/services/reviews.service';
+import { Star } from 'lucide-react';
+import clsx from 'clsx';
+
+
+const categoryNameMap: Record<string, string> = {
+  'Am nhac': 'Âm nhạc',
+  'Cong nghe': 'Công nghệ',
+  'Kinh doanh': 'Kinh doanh',
+  'The thao': 'Thể thao',
+  'Nghe thuat': 'Nghệ thuật',
+  'Giai tri': 'Giải trí',
+  'Giao duc': 'Giáo dục',
+  'Khoa hoc': 'Khoa học',
+  'Am thuc': 'Ẩm thực',
+  'Workshop': 'Workshop',
+  'Khac': 'Khác'
+};
+const formatCategory = (cat: string) => categoryNameMap[cat] || cat;
 
 const fallbackImage =
   'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1400&q=80';
@@ -12,6 +31,7 @@ const fallbackImage =
 type EventDetailSectionProps = {
   event: Event;
   tickets: Ticket[];
+  reviews: Review[];
 };
 
 function formatDate(value: string) {
@@ -25,9 +45,9 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function EventDetailSection({ event, tickets }: EventDetailSectionProps) {
+export function EventDetailSection({ event, tickets, reviews }: EventDetailSectionProps) {
   const remaining = tickets.reduce((total, ticket) => total + Math.max(ticket.quantity - ticket.sold, 0), 0);
-  const tags = [event.category, event.status === 'published' ? 'Đang mở bán' : event.status, 'QR Check-in'];
+  const tags = [formatCategory(event.category), event.status === 'published' ? 'Đang mở bán' : event.status, 'QR Check-in'];
 
   return (
     <motion.section
@@ -54,15 +74,16 @@ export function EventDetailSection({ event, tickets }: EventDetailSectionProps) 
             <h1 className="text-3xl font-extrabold tracking-normal text-slate-950 dark:text-white md:text-5xl">
               {event.title}
             </h1>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300">
-              {event.description}
-            </p>
+            <div
+              className="mt-3 max-w-3xl text-base leading-7 text-slate-600 dark:text-slate-300 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 [&>p]:mb-2 [&_a]:text-teal-600 [&_a]:underline"
+              dangerouslySetInnerHTML={{ __html: event.description }}
+            />
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
             <InfoItem icon={<MapPin size={19} />} label="Địa điểm" value={event.location} />
             <InfoItem icon={<Clock3 size={19} />} label="Thời gian" value={formatDate(event.startDate)} />
-            <InfoItem icon={<Tags size={19} />} label="Thể loại" value={event.category} />
+            <InfoItem icon={<Tags size={19} />} label="Thể loại" value={formatCategory(event.category)} />
             <InfoItem icon={<TicketCounter />} label="Số vé còn lại" value={`${remaining} vé`} />
           </div>
         </div>
@@ -98,6 +119,79 @@ export function EventDetailSection({ event, tickets }: EventDetailSectionProps) 
             </div>
           ))}
         </div>
+      </Card>
+      <Card className="p-5 md:p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="grid h-10 w-10 place-items-center rounded bg-teal-50 text-[#14b8a6] dark:bg-teal-950">
+            <Star size={20} />
+          </span>
+          <h2 className="text-xl font-bold text-slate-950 dark:text-white">Đánh giá từ người tham dự</h2>
+        </div>
+        {!reviews || reviews.length === 0 ? (
+          <p className="text-slate-500">Chưa có đánh giá nào cho sự kiện này.</p>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 border-b border-slate-100 pb-4 dark:border-slate-800">
+              <div className="text-4xl font-extrabold text-slate-900 dark:text-white">
+                {(reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)}
+              </div>
+              <div>
+                <div className="flex text-amber-400">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      size={20}
+                      className={star <= Math.round(reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length) ? 'fill-amber-400' : 'fill-transparent text-slate-300'}
+                    />
+                  ))}
+                </div>
+                <p className="mt-1 text-sm text-slate-500">Dựa trên {reviews.length} đánh giá</p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              {reviews.map((review) => {
+                const userObj = typeof review.user === 'object' ? review.user : null;
+                const userName = userObj?.name || 'Người dùng ẩn danh';
+                const userAvatar = userObj?.avatar;
+
+                return (
+                  <div key={review._id} className="rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+                    <div className="mb-2 flex items-center gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#14b8a6] text-white">
+                        {userAvatar ? (
+                          <img src={userAvatar} alt={userName} className="h-full w-full rounded-full object-cover" />
+                        ) : (
+                          <span className="font-bold">{userName.charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">{userName}</p>
+                        <div className="flex text-amber-400">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={14}
+                              className={star <= review.rating ? 'fill-amber-400' : 'fill-transparent text-slate-300'}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className="ml-auto text-xs text-slate-400">
+                        {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                    {review.comment && (
+                      <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                        {review.comment}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </Card>
     </motion.section>
   );

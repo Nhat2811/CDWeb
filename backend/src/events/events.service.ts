@@ -51,8 +51,19 @@ export class EventsService {
       filter._id = { $in: eventIds };
     }
 
-    const events = await this.eventModel.find(filter).sort({ startDate: 1 }).lean().exec();
-    if (events.length === 0) return [];
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const limit = query.limit ? parseInt(query.limit, 10) : 12;
+    const skip = (page - 1) * limit;
+
+    const total = await this.eventModel.countDocuments(filter).exec();
+    const events = await this.eventModel.find(filter).sort({ startDate: 1 }).skip(skip).limit(limit).lean().exec();
+    
+    if (events.length === 0) {
+      return {
+        items: [],
+        meta: { total, page, limit, totalPages: 0 },
+      };
+    }
 
     const stats = await this.ticketModel
       .aggregate<{
@@ -74,12 +85,22 @@ export class EventsService {
       .exec();
     const statsByEvent = new Map(stats.map((item) => [item._id.toString(), item]));
 
-    return events.map((event) => ({
+    const items = events.map((event) => ({
       ...event,
       minTicketPrice: statsByEvent.get(event._id.toString())?.minTicketPrice ?? 0,
       maxTicketPrice: statsByEvent.get(event._id.toString())?.maxTicketPrice ?? 0,
       availableTickets: statsByEvent.get(event._id.toString())?.availableTickets ?? 0,
     }));
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string) {
@@ -92,6 +113,10 @@ export class EventsService {
     const event = await this.eventModel.findByIdAndUpdate(id, dto, { new: true }).exec();
     if (!event) throw new NotFoundException('Event not found');
     return event;
+  }
+
+  async updateEventStats(id: string, averageRating: number, totalReviews: number) {
+    await this.eventModel.findByIdAndUpdate(id, { averageRating, totalReviews }).exec();
   }
 
   async remove(id: string) {

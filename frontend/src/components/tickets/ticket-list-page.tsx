@@ -14,6 +14,7 @@ import { EmptyTicketState } from './empty-ticket-state';
 import { TicketCard } from './ticket-card';
 import { TicketDetailDialog } from './ticket-detail-dialog';
 import { TicketFilterBar, TicketSort, TicketStatusFilter } from './ticket-filter-bar';
+import { ReviewModal } from '../event/review-modal';
 
 const PAGE_SIZE = 5;
 
@@ -29,6 +30,7 @@ export function TicketListPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<Booking | null>(null);
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<TicketStatusFilter>('all');
   const [sort, setSort] = useState<TicketSort>('newest');
@@ -153,6 +155,7 @@ export function TicketListPage() {
                   onViewDetail={setSelectedBooking}
                   onCancel={setConfirmCancel}
                   onPay={handlePay}
+                  onReview={setReviewBooking}
                 />
               ))}
             </AnimatePresence>
@@ -228,6 +231,19 @@ export function TicketListPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {reviewBooking && (
+        <ReviewModal
+          isOpen={true}
+          onClose={() => setReviewBooking(null)}
+          bookingId={reviewBooking._id}
+          eventTitle={reviewBooking.event?.title || 'Sự kiện'}
+          onSuccess={() => {
+            showToast('success', 'Đánh giá thành công. Cảm ơn bạn!');
+            load();
+          }}
+        />
+      )}
 
       <AnimatePresence>
         {toast && (

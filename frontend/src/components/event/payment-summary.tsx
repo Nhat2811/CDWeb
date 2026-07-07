@@ -6,7 +6,7 @@ type PaymentSummaryProps = {
 };
 
 export function calculateDiscount(subtotal: number, code: string) {
-  const normalized = code.trim().toUpperCase();
+  const normalized = code?.trim()?.toUpperCase() || '';
   if (normalized === 'EVENT10') return Math.round(subtotal * 0.1);
   if (normalized === 'VIP50') return Math.min(50000, subtotal);
   return 0;

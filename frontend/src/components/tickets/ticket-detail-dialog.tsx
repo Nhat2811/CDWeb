@@ -65,7 +65,7 @@ export function TicketDetailDialog({ booking, user, onClose }: TicketDetailDialo
                     ['Người đặt', user?.name ?? 'Khách hàng'],
                     ['Email', user?.email ?? 'Không có'],
                     ['SĐT', user?.phone || 'Chưa cập nhật'],
-                    ['Loại vé', booking.ticket?.name ?? 'N/A'],
+                    ['Loại vé', (typeof booking.ticket === 'object' && booking.ticket ? booking.ticket.name : undefined) ?? 'N/A'],
                     ['Số lượng', `${booking.quantity}`],
                     ['Tổng tiền', `${booking.totalPrice.toLocaleString('vi-VN')}đ`],
                     ['Thời gian thanh toán', booking.status === 'paid' ? new Date(booking.createdAt).toLocaleString('vi-VN') : 'Chưa thanh toán'],
