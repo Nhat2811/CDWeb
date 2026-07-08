@@ -9,9 +9,5 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
-  },
-  "dependencies": {
-    "md-to-pdf": "^5.2.5",
-    "puppeteer": "^25.3.0"
   }
 }

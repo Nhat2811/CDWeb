@@ -96,14 +96,17 @@ export default function ClientEventList({ initialEvents, initialMeta }: { initia
   }
 
   useEffect(() => {
-    if (initialEvents.length > 0 && Object.values(filters).every((v) => v === '')) {
-      setEvents(initialEvents);
-      setMeta(initialMeta);
-    } else if (events.length === 0 && !loading) {
-      void load(filters);
-    }
+    const timeoutId = setTimeout(() => {
+      if (initialEvents.length > 0 && Object.values(filters).every((v) => v === '')) {
+        setEvents(initialEvents);
+        setMeta(initialMeta);
+      } else {
+        void load(filters);
+      }
+    }, 500);
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialEvents, initialMeta]);
+  }, [filters, initialEvents, initialMeta]);
 
   const activeFilterCount = useMemo(() => Object.values(filters).filter((value) => value.trim() !== '').length, [filters]);
 
@@ -131,7 +134,6 @@ export default function ClientEventList({ initialEvents, initialMeta }: { initia
   function applyCategory(category: string) {
     const nextFilters = { ...filters, category };
     setFilters(nextFilters);
-    void load(nextFilters);
   }
 
   function onSubmit(event: FormEvent) {
@@ -142,7 +144,6 @@ export default function ClientEventList({ initialEvents, initialMeta }: { initia
   function clearFilters() {
     setFilters(emptyFilters);
     setExpandedCategories({});
-    void load(emptyFilters);
   }
 
   function toggleCategory(category: string) {
@@ -206,7 +207,7 @@ export default function ClientEventList({ initialEvents, initialMeta }: { initia
             </label>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <label className="flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2">
               <CalendarDays size={18} className="text-[#14b8a6]" />
               <input
@@ -247,9 +248,6 @@ export default function ClientEventList({ initialEvents, initialMeta }: { initia
                 onChange={(event) => updateFilter('maxPrice', event.target.value)}
               />
             </label>
-            <Button className="h-11" disabled={loading}>
-              {loading ? 'Đang lọc...' : 'Lọc'}
-            </Button>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
